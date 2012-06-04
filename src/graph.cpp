@@ -497,7 +497,9 @@ void Graph::Extract() {
 ****************************************************************/
 
 void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
+	//cm2 is the same info as cm but in an easier to parse format
 	FILE * cm;
+	FILE * cm2;
 	int i , j;
 	for (i = 0; i < T->get_leafnum(); i++) {
 		mean[i] = mean[i]/RAND;
@@ -510,9 +512,12 @@ void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
 	}
     
     char file[256];
+	char file2[256];
     sprintf(file, "%s/ZScore.txt", path);
+	sprintf(file2, "%s/ZS.txt", path);
     printf("Writing ZScores to %s ...\n", file); 
 	cm = fopen(file, "w+");
+	cm2 = fopen(file2,"w+");
     if(!cm) {
         printf("Can't open %s\n", path);
         sprintf(file, "result/ZScore.txt", path);
@@ -532,6 +537,12 @@ void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
 		if (var[i] == 0) 
 			fprintf(cm, "**%d\t\t %f%% \t\t %f%% \t\t %f \t\t %f \n", ID[i], C_main[i+1]/subgraphCounter*100, mean[i]/subgraphCounter*100, Score[i], double((C_main[i+1] - mean[i])));
 	}
-
 	fclose (cm);
+	
+	for(i=0; i<T->get_leafnum(); i++){
+		if (var[i] != 0){
+			fprintf(cm2,"%d, %f\n",ID[i],Score[i]);
+		}
+	}
+	fclose (cm2);
 }

@@ -16,6 +16,8 @@ def outputGraph(graph,name="OUTPUT.txt"):
 def findMotifs(G,motifSize):
 	outputGraph(G)
 	os.system("./Kavosh -i result/OUTPUT.txt -r 1000 -s "+str(motifSize))
+	
+	
 
 if __name__ == '__main__':
 	G = nx.gn_graph(100)
