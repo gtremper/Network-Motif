@@ -220,7 +220,7 @@ int* Graph::getNeighbours(vertex v) {
 
 int Graph::get_vertex() {
 	int ind = rand() % nEd;
-printf("nEd = %d, ind = %d, degree = %d\n", nEd, ind, degree[ind]);
+	//printf("nEd = %d, ind = %d, degree = %d\n", nEd, ind, degree[ind]);
 	return degree[ind];
 	
 }
@@ -528,9 +528,9 @@ void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
 	fprintf(cm, "ID\t\tNUM IN REAL \t\t MEAN IN RANDOM \t VAR IN RANDOM \t\t ZSCORE\n");
 	for (i = 0; i < T->get_leafnum(); i++) {
 		if (var[i] != 0) 
-			fprintf(cm, "%d\t\t %f% \t\t %f% \t\t %f \t\t %f\n", ID[i], C_main[i+1]/subgraphCounter*100, mean[i]/subgraphCounter*100, var[i], Score[i]);
+			fprintf(cm, "%d\t\t %f%% \t\t %f%% \t\t %f \t\t %f\n", ID[i], C_main[i+1]/subgraphCounter*100, mean[i]/subgraphCounter*100, var[i], Score[i]);
 		if (var[i] == 0) 
-			fprintf(cm, "**%d\t\t %f% \t\t %f% \t\t %f \t\t %f \n", ID[i], C_main[i+1]/subgraphCounter*100, mean[i]/subgraphCounter*100, Score[i], double((C_main[i+1] - mean[i])));
+			fprintf(cm, "**%d\t\t %f%% \t\t %f%% \t\t %f \t\t %f \n", ID[i], C_main[i+1]/subgraphCounter*100, mean[i]/subgraphCounter*100, Score[i], double((C_main[i+1] - mean[i])));
 	}
 
 	fclose (cm);
