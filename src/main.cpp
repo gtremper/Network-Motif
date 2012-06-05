@@ -5,6 +5,7 @@
 #include <graph.h>
 #include <getopt.h>
 #include <randomGenerator.h>
+#include <iostream>
 
 #define EPOC 10
 //#define Debug
@@ -376,22 +377,23 @@ int main(int argc, char *argv[]) {
     srand(time(NULL));
 	isRand = true;
     long long boz = 0;
-	printf("Number of Random Graphs: %d\n", num_random_graphs);
 	for (i = 1; i <= num_random_graphs; i++) {
+		clog <<"\r"<<"Random Graphs Completed: "<< i << "/"<<num_random_graphs <<flush;
 		//start_random_time = clock();
 		gen.genRandGraph_Edge(g);
 		subgraphCounter = 0;
 		Enumerate();
 		g->Extract();
-//    	printf("Total Number of Subgraphs in Random graph %d: %d\n", i, subgraphCounter);	
-  //  boz  += subgraphCounter;
+		//printf("Total Number of Subgraphs in Random graph %d: %d\n", i, subgraphCounter);	
+		//boz  += subgraphCounter;
 		//end_random_time = clock();
 		//random_time = difftime(end_random_time, start_random_time)/(double)CLOCKS_PER_SEC;
 		//printf("Time Used for random %d : %f\n", i, random_time);
 		//total_random_time += random_time;
 	}
+	printf("\n");
 	
-printf("Avg. RAndom = %lld\n", (long long)((float)boz/num_random_graphs));
+	//printf("Avg. RAndom = %lld\n", (long long)((float)boz/num_random_graphs));
 	if (0 < num_random_graphs)
 		g->calculateZSCORE(num_random_graphs, subgraphCounterMain, output_directory);
 		

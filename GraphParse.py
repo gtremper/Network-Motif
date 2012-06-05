@@ -17,9 +17,20 @@ def outputGraph(graph,name="OUTPUT.txt"):
 #Find motifs of motifSize in G
 def findMotifs(G,motifSize):
 	outputGraph(G)
-	os.system("./Kavosh -i result/OUTPUT.txt -r 1000 -s "+str(motifSize))
+	os.system("./Kavosh -i networks/ecoli -r 100 -s "+str(motifSize))
+	f = open("result/ZS.txt")
+	data = np.loadtxt(f)
+	f.close()
+	motifList = []
+	for d in data:
+		motifList.append( (int(d[0]),d[1]) )
+	sort = sorted(motifList,key=lambda derp:-derp[1])
+	print sort
+	graph = convertIDToGraph(sort[0][0],motifSize)
+	nx.draw(graph)
+	plt.show()
 
-	
+# convert Graph ID to a networkx graph	
 def convertIDToGraph(id,motifSize):
 	binary = bin(id);
 	adj = np.zeros(motifSize*motifSize)
@@ -28,13 +39,14 @@ def convertIDToGraph(id,motifSize):
 			break
 		adj[-x] = int(binary[-x])
 	adj.shape = (motifSize,motifSize)
-	M = np.mat(adj)
-	graph = nx.from_numpy_matrix(M,create_using=nx.DiGraph())
-	nx.draw(graph)
-	plt.show()
+	graph = nx.to_networkx_graph(adj,create_using=nx.DiGraph())
+	return graph
+	
 
 if __name__ == '__main__':
-	#G = nx.gn_graph(100)
-	#findMotifs(G,4)
+	G = nx.gn_graph(100)
+	#nx.draw(G)
+	#plt.show()
+	findMotifs(G,4)
 	convertIDToGraph(642,4)
 	

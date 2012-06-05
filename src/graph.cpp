@@ -262,10 +262,11 @@ void Graph::Finalize() {
 		E_temp[i].clear();		
 	}
 	maxDegree = max;
-	
+	/*
 	for(int jj = 0; jj <degInd; jj++) {
 		printf("Deg[%d] = %d\n", jj, degree[jj]);
-	}	
+	}
+	*/	
 	int *temp = new int[max+1];
 	for(int jj = 0; jj < max; jj++) {
 		temp[jj] = 0;	
@@ -480,7 +481,7 @@ void Graph::Extract() {
 	else {
 		DFSmain(current, adj_str, 0);
 		enumerated_class = C_main[0];	
-		printf("Number of Non-isomorphic Classes: %f\n", enumerated_class);
+		printf("Number of Non-isomorphic Classes: %.0f\n", enumerated_class);
 	}
 	
 	if(isRand) {
@@ -541,7 +542,7 @@ void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
 	
 	for(i=0; i<T->get_leafnum(); i++){
 		if (var[i] != 0){
-			fprintf(cm2,"%d, %f\n",ID[i],Score[i]);
+			fprintf(cm2,"%d %f\n",ID[i],Score[i]);
 		}
 	}
 	fclose (cm2);
