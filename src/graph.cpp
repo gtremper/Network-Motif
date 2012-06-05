@@ -530,7 +530,7 @@ void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
         }
     }
 
-	fprintf(cm, "TOTAL NUMBER OF CLASSES:: %f\n\n", enumerated_class);
+	fprintf(cm, "TOTAL NUMBER OF CLASSES:: %.0f\n\n", enumerated_class);
 	fprintf(cm, "ID\t\tNUM IN REAL \t\t MEAN IN RANDOM \t VAR IN RANDOM \t\t ZSCORE\n");
 	for (i = 0; i < T->get_leafnum(); i++) {
 		if (var[i] != 0) 
@@ -542,7 +542,7 @@ void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
 	
 	for(i=0; i<T->get_leafnum(); i++){
 		if (var[i] != 0){
-			fprintf(cm2,"%d %f\n",ID[i],Score[i]);
+			fprintf(cm2,"%d %.3f\n",ID[i],Score[i]);
 		}
 	}
 	fclose (cm2);

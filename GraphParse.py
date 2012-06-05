@@ -6,29 +6,26 @@ import os
 #Out put a text file representation of graph
 def outputGraph(graph,name="OUTPUT.txt"):
 	G = nx.convert_node_labels_to_integers(graph,1)
-	f = open("result/"+name,'w')
+	f = open("result/"+name,'wb')
 	f.write(str(len(G)) + '\n')
-	for e in G.edges():
-		f.write(str(e[0])+' '+str(e[1])+'\n')
-		if not G.is_directed():
-			f.write(str(e[1])+' '+str(e[0])+'\n')
+	nx.write_edgelist(G,f,data=False)
 	f.close()
 
 #Find motifs of motifSize in G
 def findMotifs(G,motifSize):
 	outputGraph(G)
-	os.system("./Kavosh -i networks/ecoli -r 100 -s "+str(motifSize))
-	f = open("result/ZS.txt")
-	data = np.loadtxt(f)
-	f.close()
+	os.system("./Kavosh -i networks/ecoli -r 1000 -s "+str(motifSize))
+	data = np.loadtxt("result/ZS.txt")
 	motifList = []
 	for d in data:
 		motifList.append( (int(d[0]),d[1]) )
 	sort = sorted(motifList,key=lambda derp:-derp[1])
-	print sort
-	graph = convertIDToGraph(sort[0][0],motifSize)
-	nx.draw(graph)
-	plt.show()
+	for d in sort:
+		if d[1]>=4.0:
+			print d
+			graph = convertIDToGraph(d[0],motifSize)
+			nx.draw_circular(graph)
+			plt.show()
 
 # convert Graph ID to a networkx graph	
 def convertIDToGraph(id,motifSize):

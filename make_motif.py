@@ -69,7 +69,7 @@ f2 = open('output.txt', 'wb')
 f2.write(str(len(F.nodes())) + '\n')
 nx.write_edgelist(F, f2, data=False)
 f2.close()
-os.system("./Kavosh -i output.txt -r 300 -s 3")
+os.system("./Kavosh -i output.txt -r 1000 -s 3")
 
 #nx.draw(F)
 #plt.show()
