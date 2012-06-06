@@ -1,4 +1,5 @@
 #include "graph.h"
+#include <iostream>
 
 graph canon[MAXN * MAXM];
 graph * nauty_g;
@@ -424,20 +425,20 @@ void Graph::print_adjMatrix(char * str) {
 		for(j = 0; j < subgraphSize; j++) {
 			if(i == j) {
 				l++;
-				fprintf(am,"0");
+				//fprintf(am,"0");
 			}
 			else
 			{
 				index = i*(subgraphSize)+(j-l);
-				fprintf(am, "%d", str[index]);
+				//fprintf(am, "%d", str[index]);
 				if (str[index] == 1)
 					ID[idxID] += (long) (pow(2, (maxpow - (i*subgraphSize+j))));
 			}
 		}
-		fprintf(am,"\n");
+		//fprintf(am,"\n");
 	}
-	fprintf(am,"ID: %d", ID[idxID]);
-	fprintf(am,"\n\n");
+	//fprintf(am,"ID: %d", ID[idxID]);
+	//fprintf(am,"\n\n");
 	idxID++;
 }
 
@@ -496,6 +497,17 @@ void Graph::Extract() {
 
 /****************************************************************
 ****************************************************************/
+void Graph::outputMotifResults(char* path){
+	FILE * cm;
+	char file[256];
+	sprintf(file, "%s/MotifCount.txt", path);
+	cm = fopen(file, "w+");
+	for(int i=0; i<T->get_leafnum(); i++){
+		fprintf(cm,"%d %.0f\n",ID[i],C_main[i+1]);
+	}
+	fclose(cm);
+}
+
 
 void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
 	//cm2 is the same info as cm but in an easier to parse format

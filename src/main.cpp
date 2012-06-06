@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
 	clock_t start_random_time, end_random_time;
 
 	register int i, j;
-	long long subgraphCounterMain;
+	//long long subgraphCounterMain;
 	generator gen;
 	int next_option;
 	const char *const short_options = "hi:o:r:s:";
@@ -357,11 +357,11 @@ int main(int argc, char *argv[]) {
 	if (!ReadData(input_filename))
 		return 0;
 	
-    g->setPath(output_directory);
+    //g->setPath(output_directory);
 
 	clock_t startTime = clock();
 	//for main graph
-	isRand = false;
+	//isRand = false;
 	subgraphCounter = 0;
 	Enumerate();
 	g->AllocateCounter();
@@ -372,6 +372,10 @@ int main(int argc, char *argv[]) {
 	main_time = difftime(end_main_time, startTime)/(double)CLOCKS_PER_SEC;
 	printf("Time Used for main graph: %f\n", main_time);
 	
+	//This function was added because we aren't using random graphs
+	g->outputMotifResults(output_directory);
+	
+	/*
 	subgraphCounterMain = subgraphCounter;
 	//for random graphs
     srand(time(NULL));
@@ -396,6 +400,7 @@ int main(int argc, char *argv[]) {
 	//printf("Avg. RAndom = %lld\n", (long long)((float)boz/num_random_graphs));
 	if (0 < num_random_graphs)
 		g->calculateZSCORE(num_random_graphs, subgraphCounterMain, output_directory);
+	*/
 		
 	for(i = 0; i < subgraphSize; i++) {
 		delete [] Index[i];

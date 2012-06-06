@@ -14,18 +14,17 @@ def outputGraph(graph,name="OUTPUT.txt"):
 #Find motifs of motifSize in G
 def findMotifs(G,motifSize):
 	outputGraph(G)
-	os.system("./Kavosh -i networks/ecoli -r 1000 -s "+str(motifSize))
-	data = np.loadtxt("result/ZS.txt")
+	os.system("./Kavosh -i networks/ecoli -s "+str(motifSize))
+	data = np.loadtxt("result/MotifCount.txt")
 	motifList = []
 	for d in data:
-		motifList.append( (int(d[0]),d[1]) )
+		motifList.append( (int(d[0]),int(d[1])) )
 	sort = sorted(motifList,key=lambda derp:-derp[1])
 	for d in sort:
-		if d[1]>=4.0:
-			print d
-			graph = convertIDToGraph(d[0],motifSize)
-			nx.draw_circular(graph)
-			plt.show()
+		print d
+	graph = convertIDToGraph(sort[0][0],motifSize)
+	nx.draw_circular(graph)
+	plt.show()
 
 # convert Graph ID to a networkx graph	
 def convertIDToGraph(id,motifSize):
