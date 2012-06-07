@@ -504,7 +504,7 @@ void Graph::outputMotifResults(int subgraphCounter, char* path){
 	sprintf(file, "%s/MotifCount.txt", path);
 	cm = fopen(file, "w+");
 	for(int i=0; i<T->get_leafnum(); i++){
-		fprintf(cm,"%d %f\n",ID[i],C_main[i+1]/subgraphCounter);
+		fprintf(cm,"%d %.0f %f\n",ID[i],C_main[i+1],C_main[i+1]/subgraphCounter);
 	}
 	fclose(cm);
 }

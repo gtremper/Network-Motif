@@ -49,7 +49,7 @@ def findMotifs(graphs,motifSize,threshold):
 		os.system("./Kavosh "+str(motifSize))
 		data = np.loadtxt("result/MotifCount.txt")
 		for d in data:
-			iD,size = d
+			iD,size,percent = d
 			if iD in motifs:
 				motifs[iD].append(size)
 			else:
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 	data = pickle.load(f)
 	f.close()
 	
-	motifs = findMotifs(data[('NL','lcorr')], 4, 0.98)
+	motifs = findMotifs(data[('NL','lcorr')], 3, 0.98)
 	
 	for key,value in motifs.iteritems():
 		print "ID: "+str(key)+" Stats: "+str(value)
