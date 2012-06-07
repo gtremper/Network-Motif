@@ -35,7 +35,7 @@ public:
 	void DFS(Node * cur);
 	void DFSmain(Node * cur, char * str, int lev);
 	void Extract();
-	void outputMotifResults(char* path);
+	void outputMotifResults(int subgraphCounter,char* path);
 	void calculateZSCORE(int RAND, int subgraphCounter, char *path);
 	void print_adjMatrix(char * str);
 	int get_vertex();

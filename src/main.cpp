@@ -18,7 +18,7 @@ void NEG ( int n, int k, int root, int level, int reminder, int m);
 //1st dimension is the layer, while the 2nd is the list of selected nodes in each layer. subgraph[k][0] is the number of nodes in layer k.
 //vertex subgraph[subgraphSize][subgraphSize+1];
 vertex **subgraph;
-int subgraphSize = -1, num_random_graphs = 0;
+int subgraphSize = -1; //num_random_graphs = 0;
 
 bool *Visited;
 
@@ -34,7 +34,7 @@ long long subgraphCounter;
 //g stores the input graph
 Graph *g;
 
-long num;
+//long num;
 
 bool isRand;
 
@@ -276,12 +276,11 @@ void Enumerate() {
 ****************************************************************/
 
 int main(int argc, char *argv[]) {
+	/*
 	double total_random_time = 0;
 	double random_time , main_time;
 	clock_t start_random_time, end_random_time;
-
-	register int i, j;
-	//long long subgraphCounterMain;
+	long long subgraphCounterMain;
 	generator gen;
 	int next_option;
 	const char *const short_options = "hi:o:r:s:";
@@ -327,10 +326,10 @@ int main(int argc, char *argv[]) {
 			case '?':
 	    		print_usage (stdout, 1);
 				
-			case -1:		/* Done with options. */
+			case -1:		// Done with options.
 			    break;
 			
-			default:		/* Something else: unexpected. */
+			default:		//Something else: unexpected. 
                 print_usage (stderr, -1);
 		}
     } while (next_option != -1);
@@ -345,35 +344,41 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "Input Argument Error: Please specify a motif size using \"-s <MOTIF SIZE>\".\n");
         print_usage (stderr, -1);
 	}
-
+	*/
+	
+	//Hardcoded inputs so it runs faster
+	subgraphSize = atoi(argv[1]);
+	char* input_filename = "result/OUTPUT.txt";
+	char* output_directory = "result";
+	
 	subgraph = new int*[subgraphSize];
 	for (int i = 0; i < subgraphSize; i++)
 		subgraph[i] = new int[subgraphSize+1];
 	
-	num = 0;	
-	printf("Motif Size: %d\n", subgraphSize);
-	printf("Input Graph: %s\n", input_filename);
+	//num = 0;	
+	//printf("Motif Size: %d\n", subgraphSize);
+	//printf("Input Graph: %s\n", input_filename);
 		
 	if (!ReadData(input_filename))
 		return 0;
 	
     //g->setPath(output_directory);
 
-	clock_t startTime = clock();
+	//clock_t startTime = clock();
 	//for main graph
 	//isRand = false;
 	subgraphCounter = 0;
 	Enumerate();
 	g->AllocateCounter();
-	printf("Total Number of Subgraphs: %d\n", subgraphCounter);	
+	//printf("Total Number of Subgraphs: %d\n", subgraphCounter);	
 	g->Extract();
 	
-	clock_t end_main_time = clock();
-	main_time = difftime(end_main_time, startTime)/(double)CLOCKS_PER_SEC;
-	printf("Time Used for main graph: %f\n", main_time);
+	//clock_t end_main_time = clock();
+	//main_time = difftime(end_main_time, startTime)/(double)CLOCKS_PER_SEC;
+	//printf("Time Used for main graph: %f\n", main_time);
 	
 	//This function was added because we aren't using random graphs
-	g->outputMotifResults(output_directory);
+	g->outputMotifResults(subgraphCounter,output_directory);
 	
 	/*
 	subgraphCounterMain = subgraphCounter;
@@ -402,7 +407,7 @@ int main(int argc, char *argv[]) {
 		g->calculateZSCORE(num_random_graphs, subgraphCounterMain, output_directory);
 	*/
 		
-	for(i = 0; i < subgraphSize; i++) {
+	for(int i = 0; i < subgraphSize; i++) {
 		delete [] Index[i];
 		delete [] childSet[i];
 	}
@@ -416,10 +421,10 @@ int main(int argc, char *argv[]) {
     delete [] Visited;
 	delete g;
 	
-	clock_t endTime = clock();
-	double total_time = difftime(endTime, startTime)/(double)CLOCKS_PER_SEC;
-	printf("Time Used: %f\n", total_time); 
-	printf("=============================\n");	
+	//clock_t endTime = clock();
+	//double total_time = difftime(endTime, startTime)/(double)CLOCKS_PER_SEC;
+	//printf("Time Used: %f\n", total_time); 
+	//printf("=============================\n");	
 	
 	//printf("Time Used for random : %f\n", total_random_time); 		
 	

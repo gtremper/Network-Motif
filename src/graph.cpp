@@ -73,7 +73,7 @@ Graph::Graph(const int n, const int k) {
 ****************************************************************/
 
 Graph::~Graph() {
-    printf("Destroying graph ...\n");
+    //printf("Destroying graph ...\n");
 	delete [] adjMat;
     for(int i = 1; i <= nV; i++) {
         delete [] E[i];    
@@ -267,7 +267,7 @@ void Graph::Finalize() {
 	for(int jj = 0; jj <degInd; jj++) {
 		printf("Deg[%d] = %d\n", jj, degree[jj]);
 	}
-	*/	
+	
 	int *temp = new int[max+1];
 	for(int jj = 0; jj < max; jj++) {
 		temp[jj] = 0;	
@@ -286,6 +286,7 @@ void Graph::Finalize() {
 	printf("Number of Nodes: %d\n", nV);
 	printf("Number of Edges: %d\n", nE);
 	printf("Maximum Degree: %d\n", maxDegree);
+	*/
 }
 
 /****************************************************************
@@ -482,7 +483,7 @@ void Graph::Extract() {
 	else {
 		DFSmain(current, adj_str, 0);
 		enumerated_class = C_main[0];	
-		printf("Number of Non-isomorphic Classes: %.0f\n", enumerated_class);
+		//printf("Number of Non-isomorphic Classes: %.0f\n", enumerated_class);
 	}
 	
 	if(isRand) {
@@ -497,13 +498,13 @@ void Graph::Extract() {
 
 /****************************************************************
 ****************************************************************/
-void Graph::outputMotifResults(char* path){
+void Graph::outputMotifResults(int subgraphCounter, char* path){
 	FILE * cm;
 	char file[256];
 	sprintf(file, "%s/MotifCount.txt", path);
 	cm = fopen(file, "w+");
 	for(int i=0; i<T->get_leafnum(); i++){
-		fprintf(cm,"%d %.0f\n",ID[i],C_main[i+1]);
+		fprintf(cm,"%d %f\n",ID[i],C_main[i+1]/subgraphCounter);
 	}
 	fclose(cm);
 }

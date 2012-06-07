@@ -1,7 +1,9 @@
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 import os
+import cPickle as pickle
  
 #Out put a text file representation of graph
 def outputGraph(graph,name="OUTPUT.txt"):
@@ -12,19 +14,12 @@ def outputGraph(graph,name="OUTPUT.txt"):
 	f.close()
 
 #Find motifs of motifSize in G
-def findMotifs(G,motifSize):
+def findSingleMotif(G,motifSize):
 	outputGraph(G)
-	os.system("./Kavosh -i networks/ecoli -s "+str(motifSize))
+	os.system("./Kavosh -i result/OUTPUT.txt -s "+str(motifSize))
 	data = np.loadtxt("result/MotifCount.txt")
-	motifList = []
-	for d in data:
-		motifList.append( (int(d[0]),int(d[1])) )
-	sort = sorted(motifList,key=lambda derp:-derp[1])
-	for d in sort:
-		print d
-	graph = convertIDToGraph(sort[0][0],motifSize)
-	nx.draw_circular(graph)
-	plt.show()
+	return data	
+
 
 # convert Graph ID to a networkx graph	
 def convertIDToGraph(id,motifSize):
@@ -36,13 +31,55 @@ def convertIDToGraph(id,motifSize):
 		adj[-x] = int(binary[-x])
 	adj.shape = (motifSize,motifSize)
 	graph = nx.to_networkx_graph(adj,create_using=nx.DiGraph())
-	return graph
+	nx.draw_circular(graph)
+	plt.show()
+	
+def findMotifs(graphs,motifSize,threshold):
+	motifs = {}
+	numstring ="/"+str(len(graphs))
+	counter = 0
+	for G in graphs:
+		sys.stdout.write("\r")
+		sys.stdout.write("Motif Finding Progress: "+str(counter)+numstring)
+		sys.stdout.flush()
+		counter+=1
+		graph = nx.DiGraph(G>=threshold)
+		outputGraph(graph)
+		#Jenky way to use c++ motif finder in python
+		os.system("./Kavosh "+str(motifSize))
+		data = np.loadtxt("result/MotifCount.txt")
+		for d in data:
+			iD,size = d
+			if iD in motifs:
+				motifs[iD].append(size)
+			else:
+				motifs[iD] = [size]
+	
+	print '\nMotifs Done!'
+	
+	for key,value in motifs.iteritems():
+		numZero = len(graphs)-len(value)
+		value.extend([0 for derp in xrange(numZero)])
+		array = np.array(value)
+		stats = (array.sum(),array.mean(),array.std(),numZero)
+		motifs[key] = stats
+	
+	return motifs
+
+		
+		
 	
 
 if __name__ == '__main__':
-	G = nx.gn_graph(100)
-	#nx.draw(G)
-	#plt.show()
-	findMotifs(G,4)
-	convertIDToGraph(642,4)
+	f = open("aznorbert_corrsd.pkl","rb")
+	data = pickle.load(f)
+	f.close()
+	
+	motifs = findMotifs(data[('NL','lcorr')], 4, 0.98)
+	
+	for key,value in motifs.iteritems():
+		print "ID: "+str(key)+" Stats: "+str(value)
+
+	
+	
 	
