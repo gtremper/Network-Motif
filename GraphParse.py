@@ -9,10 +9,9 @@ import scipy.stats as stats
 #Out put a text file representation of graph
 def outputGraph(graph,name="OUTPUT.txt"):
 	G = nx.convert_node_labels_to_integers(graph,1)
-	f = open("result/"+name,'wb')
-	f.write(str(len(G)) + '\n')
-	nx.write_edgelist(G,f,data=False)
-	f.close()
+	with open("result/"+name,'wb') as f:
+		f.write(str(len(G)) + '\n')
+		nx.write_edgelist(G,f,data=False)
 
 #Find motifs of motifSize in G
 def findSingleMotif(G,motifSize):
@@ -41,17 +40,21 @@ def findMotifs(graphs,motifSize,degree):
 	numstring ="/"+str(len(graphs))
 	counter = 1
 	for G in graphs:
+		#calculate threshold
 		sortedWeights = np.sort(G,axis=None)
 		threshold = sortedWeights[-len(G)*degree-1]
-		
+		#Print progress
 		sys.stdout.write("\r")
 		sys.stdout.write("Motif Finding Progress: "+str(counter)+numstring)
 		sys.stdout.write(" Threshold: "+str(threshold))
 		sys.stdout.flush()
 		counter+=1
-		
+		#Output graph to txt file
 		graph = nx.DiGraph(G>threshold)
-		outputGraph(graph)
+		graph = nx.convert_node_labels_to_integers(graph,1)
+		with open('result/OUTPUT.txt','wb') as f:
+			f.write(str(len(graph)) + '\n')
+			nx.write_edgelist(graph,f,data=False)
 		#Jenky way to use c++ motif finder in python
 		os.system("./Kavosh "+str(motifSize))
 		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
@@ -59,9 +62,9 @@ def findMotifs(graphs,motifSize,degree):
 		subgraphs.append(sub)
 		for iD,total,percent in data:
 			if iD in motifs:
-				motifs[iD].append(percent)
+				motifs[iD].append(total)
 			else:
-				motifs[iD] = [percent]
+				motifs[iD] = [total]
 	
 	print '\nMotifs Done!'
 	
@@ -70,31 +73,22 @@ def findMotifs(graphs,motifSize,degree):
 		value.extend([0 for derp in xrange(numZero)])
 		motifs[key] = np.array(value)
 		
-	return (motifs,np.array(subgraphs),)
-
+	#return (motifs,np.array(subgraphs))
+	return motifs
 
 def aveDegree(G):
-	return G.size()/float(len(G))
-		
-	
+	return G.size()/float(len(G))	
 
-if __name__ == '__main__':
-	f = open("aznorbert_corrsd.pkl","rb")
-	data = pickle.load(f)
-	f.close()	
-	
-	motifSize = 3
-	
-	motifsNL = findMotifs(data[('NL','corr')], motifSize, 15)[0]
-	motifsAD = findMotifs(data[('MCI','corr')], motifSize, 15)[0]
-	
+def statTest(data,motifSize,degree):
+
+	motifsAD = findMotifs(data[('AD','corr')], motifSize, degree)
+	motifsNL = findMotifs(data[('NL','corr')], motifSize, degree)
 	allMotifs = list(set(motifsNL.keys()) & set(motifsAD.keys()))
 	
 	for key in allMotifs:
 		tup = stats.ks_2samp(motifsNL[key],motifsAD[key])
 		print str(key)+": "+str(tup)
-		
-		
+			
 	print "Ave, std per key NL then AD"
 	for key in allMotifs:
 		nl = motifsNL[key]
@@ -106,23 +100,69 @@ if __name__ == '__main__':
 		print str(len(nl)-np.count_nonzero(nl)) + " "+str(len(ad)-np.count_nonzero(ad))
 		if tup[1]<0.01:
 			convertIDToGraph(int(key),motifSize)
-			
-	
-	
-	#motifList = sorted(motifList,key=lambda x: -x[1][1])
-	
-	#for i in xrange(10):
-	#	print str(motifList[i][0])+" "+str(motifList[i][1])
-	#	convertIDToGraph(int(motifList[i][0]),motifSize)
+
 		
+def plotMotifGraphs(data,motifSize,degree,numofmotifs):
+	for corr in ('corr','lcorr','lacorr'):
+		nl=findMotifs(data[('NL',corr)], motifSize, degree)
+		mci=findMotifs(data[('MCI',corr)], motifSize, degree)
+		ad=findMotifs(data[('AD',corr)], motifSize, degree)
+		
+		motifs = nl.items()
+		motifs = sorted(motifs,key=lambda x:-x[1].mean())
+		keys = [int(x[0]) for x in motifs[:numofmotifs]]
+		meansNL = []
+		meansMCI = []
+		meansAD = []
+		stdNL = []
+		stdMCI = []
+		stdAD = []
+		for key in keys:
+			key = float(key)
+			if key in nl:
+				meansNL.append(nl[key].mean())
+				stdNL.append(nl[key].std())
+			else:
+				meansNL.append(0.0)
+				stdNL.append(0.0)
+			if key in mci:
+				meansMCI.append(mci[key].mean())
+				stdMCI.append(mci[key].std())
+			else:
+				meansMCI.append(0.0)
+				stdMCI.append(0.0)
+			if key in ad:
+				meansAD.append(ad[key].mean())
+				stdAD.append(ad[key].std())
+			else:
+				meansAD.append(0.0)
+				stdAD.append(0.0)
+		
+		ind = np.arange(numofmotifs)
+		width = 0.2 
+
+		NLplt = plt.bar(ind, meansNL, width, color='b', yerr=stdNL, ecolor='y')
+		MCIplt = plt.bar(ind+width, meansMCI, width, color='y', yerr=stdMCI, ecolor='b')
+		ADplt = plt.bar(ind+width+width, meansAD, width, color='g', yerr=stdAD, ecolor='r')
+
+		plt.ylabel('Average number of motifs')
+		plt.xlabel('Motif ID')
+		plt.title('Motif size '+str(motifSize) +' distribution for '+corr+" with average degree "+str(degree))
+		plt.xticks(ind+width+width/2., keys)
+		plt.ylim(ymin=0.0)
+		plt.legend( (NLplt[0], MCIplt[0], ADplt[0]), ('NL', 'MCI', 'AD') )
+		plt.grid(True)
+		plt.savefig("result/MotifDistTotal-"+corr+" D-"+str(degree)+" S-"+str(motifSize))
+		plt.clf()
 	
-	#for key,value in motifList:
-		#print str(key)+"  "+str(value)
-		#print 
+
+if __name__ == '__main__':
+	with open("aznorbert_corrsd.pkl","rb") as f:
+		data = pickle.load(f)
 	
+	plotMotifGraphs(data,3,10,10)
 	
-	
-	
+
 	
 	
 """	
