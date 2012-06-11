@@ -32,11 +32,11 @@ def convertIDToGraph(id,motifSize):
 	adj.shape = (motifSize,motifSize)
 	graph = nx.to_networkx_graph(adj,create_using=nx.DiGraph())
 	nx.draw_circular(graph)
-	plt.show()
+	plt.savefig("result/id-"+str(id)+"size-"+str(motifSize))
 	
 def findMotifs(graphs,motifSize,degree):
 	motifs = {}
-	subgraphs = []
+	#subgraphs = []
 	numstring ="/"+str(len(graphs))
 	counter = 1
 	for G in graphs:
@@ -58,8 +58,8 @@ def findMotifs(graphs,motifSize,degree):
 		#Jenky way to use c++ motif finder in python
 		os.system("./Kavosh "+str(motifSize))
 		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
-		sub = int(data[0][1]/data[0][2]+0.5)
-		subgraphs.append(sub)
+		#sub = int(data[0][1]/data[0][2]+0.5)
+		#subgraphs.append(sub)
 		for iD,total,percent in data:
 			if iD in motifs:
 				motifs[iD].append(total)
@@ -80,26 +80,28 @@ def aveDegree(G):
 	return G.size()/float(len(G))	
 
 def statTest(data,motifSize,degree):
+	for corr in ('corr',):
+		motifsNL = findMotifs(data[('NL',corr)], motifSize, degree)
+		motifsMCI = findMotifs(data[('MCI',corr)], motifSize, degree)
+		motifsAD = findMotifs(data[('AD',corr)], motifSize, degree)
+		
+		allMotifs = list(set(motifsNL.keys()) & set(motifsAD.keys()) & set(motifsMCI.keys()))
+		
+		filename = "result/{0} zscores size-{1} deg-{2}".format(corr,motifSize,degree)
+		with open(filename,'w') as f:
+			f.write("{0:>10}{1:>15}{2:>15}\n".format('ID','MCI','AD'))
+			for key in allMotifs:
+				KSstatistic, MCIpvalue = stats.ks_2samp(motifsMCI[key],motifsNL[key])
+				KSstatistic, ADpvalue = stats.ks_2samp(motifsAD[key],motifsNL[key])
+				if MCIpvalue<0.01 or ADpvalue<0.01:
+					f.write("*{0:9}{1:15.3}{2:15.3}\n".format(int(key),MCIpvalue,ADpvalue))
+				else:
+					f.write("{0:10}{1:15.3}{2:15.3}\n".format(int(key),MCIpvalue,ADpvalue))
 
-	motifsAD = findMotifs(data[('AD','corr')], motifSize, degree)
-	motifsNL = findMotifs(data[('NL','corr')], motifSize, degree)
-	allMotifs = list(set(motifsNL.keys()) & set(motifsAD.keys()))
-	
-	for key in allMotifs:
-		tup = stats.ks_2samp(motifsNL[key],motifsAD[key])
-		print str(key)+": "+str(tup)
+				
 			
-	print "Ave, std per key NL then AD"
-	for key in allMotifs:
-		nl = motifsNL[key]
-		ad = motifsAD[key]
-		tup = stats.ks_2samp(nl,ad)
-		print str(key)
-		print str(nl.mean())+"  "+str(ad.mean())
-		print str(nl.std())+"  "+str(ad.std())
-		print str(len(nl)-np.count_nonzero(nl)) + " "+str(len(ad)-np.count_nonzero(ad))
-		if tup[1]<0.01:
-			convertIDToGraph(int(key),motifSize)
+			
+
 
 		
 def plotMotifGraphs(data,motifSize,degree,numofmotifs):
@@ -160,7 +162,7 @@ if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	plotMotifGraphs(data,3,10,10)
+	statTest(data,3,10)
 	
 
 	
