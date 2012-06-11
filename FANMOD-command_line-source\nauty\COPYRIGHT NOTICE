@@ -1,0 +1,31 @@
+
+ Please note: The files 
+ 
+   gtools.c
+   gtools.h
+   naugraph.c
+   nautil.c
+   nautinv.c
+   nautinv.h
+   naututil.h
+   nauty.c
+   nauty.h
+ 
+ found in this directory have been downloaded from 
+ http://cs.anu.edu.au/~bdm/nauty/. The copyright is with
+ Brendan McKay. Please note the corresponding copyright
+ notice from the website:
+
+ -----------------------------------------------------------------
+ Copyright (1984-2004) Brendan McKay. All rights reserved. 
+ Permission is hereby given for use and/or distribution with the 
+ exception of sale for profit or application with nontrivial 
+ military significance. You must not remove this copyright notice, 
+ and you must document any changes that you make to this program. 
+ This software is subject to this copyright only, irrespective of 
+ any copyright attached to any package of which this is a part.
+ 
+ Absolutely no guarantees or warranties are made concerning the 
+ suitability, correctness, or any other aspect of this program. 
+ Any use is at your own risk.
+ ------------------------------------------------------------------
