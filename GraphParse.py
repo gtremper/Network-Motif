@@ -67,7 +67,7 @@ def findMotifs(graphs,motifSize,degree):
 				motifs[iD] = [total]
 	
 	print '\nMotifs Done!'
-	
+		
 	for key,value in motifs.iteritems():
 		numZero = len(graphs)-len(value)
 		value.extend([0 for derp in xrange(numZero)])
