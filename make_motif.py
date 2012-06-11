@@ -65,11 +65,11 @@ while nx.number_weakly_connected_components(F) > 1:
 
 F = nx.convert_node_labels_to_integers(F,1)
 
-f2 = open('output.txt', 'wb')
+f2 = open(sys.argv[1] + '.OUT', 'wb')
 f2.write(str(len(F.nodes())) + '\n')
 nx.write_edgelist(F, f2, data=False)
 f2.close()
-os.system("./Kavosh -i output.txt -r 1000 -s 3")
+#os.system("./Kavosh -i output.txt -r 1000 -s 3")
 
 #nx.draw(F)
 #plt.show()
