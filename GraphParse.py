@@ -32,11 +32,23 @@ def convertIDToGraph(id,motifSize):
 	adj.shape = (motifSize,motifSize)
 	graph = nx.to_networkx_graph(adj,create_using=nx.DiGraph())
 	nx.draw_circular(graph)
-	plt.savefig("result/id-"+str(id)+"size-"+str(motifSize))
+	#plt.savefig("result/id-"+str(id)+"size-"+str(motifSize))
+	plt.show()
 	
-def findMotifs(graphs,motifSize,degree):
+
+
+
+# Main finding motifs routine	
+def findMotifs(data,key,motifSize,degree,usetotal=False):
+	#Check cache
+	filename = str(key)+'s'+str(int(motifSize))+'d'+str(int(degree))+str(usetotal)+".pkl"
+	if os.path.exists('cache/'+filename):
+		print "in cache"
+		with open('cache/'+filename,"rb") as f:
+			return pickle.load(f)
+			
+	graphs = data[key]
 	motifs = {}
-	#subgraphs = []
 	numstring ="/"+str(len(graphs))
 	counter = 1
 	for G in graphs:
@@ -58,13 +70,11 @@ def findMotifs(graphs,motifSize,degree):
 		#Jenky way to use c++ motif finder in python
 		os.system("./Kavosh "+str(motifSize))
 		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
-		#sub = int(data[0][1]/data[0][2]+0.5)
-		#subgraphs.append(sub)
 		for iD,total,percent in data:
 			if iD in motifs:
-				motifs[iD].append(total)
+				motifs[iD].append(total if usetotal else percent)
 			else:
-				motifs[iD] = [total]
+				motifs[iD] = [total if usetotal else percent]
 	
 	print '\nMotifs Done!'
 	
@@ -72,31 +82,37 @@ def findMotifs(graphs,motifSize,degree):
 		numZero = len(graphs)-len(value)
 		value.extend([0 for derp in xrange(numZero)])
 		motifs[key] = np.array(value)
+	
+	#add motifs to cache
+	with open('cache/'+filename,'wb') as f:
+		pickle.dump(motifs,f)
 		
-	#return (motifs,np.array(subgraphs))
 	return motifs
 
 def aveDegree(G):
 	return G.size()/float(len(G))	
 
 def statTest(data,motifSize,degree):
-	for corr in ('corr',):
-		motifsNL = findMotifs(data[('NL',corr)], motifSize, degree)
-		motifsMCI = findMotifs(data[('MCI',corr)], motifSize, degree)
-		motifsAD = findMotifs(data[('AD',corr)], motifSize, degree)
+	for corr in ('corr','lcorr','lacorr'):
+		motifsNL = findMotifs(data,('NL',corr), motifSize, degree)
+		motifsMCI = findMotifs(data,('MCI',corr), motifSize, degree)
+		motifsAD = findMotifs(data,('AD',corr), motifSize, degree)
 		
 		allMotifs = list(set(motifsNL.keys()) & set(motifsAD.keys()) & set(motifsMCI.keys()))
 		
-		filename = "result/{0} zscores size-{1} deg-{2}".format(corr,motifSize,degree)
+		filename = "result/{0} ks-stats size-{1} deg-{2}".format(corr,motifSize,degree)
 		with open(filename,'w') as f:
-			f.write("{0:>10}{1:>15}{2:>15}\n".format('ID','MCI','AD'))
+			f.write("{0:>10}{1:>15}{2:>15}{3:>15}{4:>15}{5:>15}\n".format('ID','MCI','AD','NORM NL','NORM MCI','NORM AD'))
 			for key in allMotifs:
 				KSstatistic, MCIpvalue = stats.ks_2samp(motifsMCI[key],motifsNL[key])
 				KSstatistic, ADpvalue = stats.ks_2samp(motifsAD[key],motifsNL[key])
-				if MCIpvalue<0.01 or ADpvalue<0.01:
-					f.write("*{0:9}{1:15.3}{2:15.3}\n".format(int(key),MCIpvalue,ADpvalue))
-				else:
-					f.write("{0:10}{1:15.3}{2:15.3}\n".format(int(key),MCIpvalue,ADpvalue))
+				k2,NLnorm = stats.normaltest(motifsNL[key])
+				k2,MCInorm = stats.normaltest(motifsMCI[key])
+				k2,ADnorm = stats.normaltest(motifsAD[key])
+				sig = "*" if (MCIpvalue<0.01 or ADpvalue <0.01) else ''
+				
+				line = "{0:>10}{1:15.3}{2:15.3}{3:15.3}{4:15.3}{5:15.3}\n"
+				f.write(line.format(sig+str(int(key)),MCIpvalue,ADpvalue,NLnorm,MCInorm,ADnorm))
 
 				
 			
@@ -106,9 +122,9 @@ def statTest(data,motifSize,degree):
 		
 def plotMotifGraphs(data,motifSize,degree,numofmotifs):
 	for corr in ('corr','lcorr','lacorr'):
-		nl=findMotifs(data[('NL',corr)], motifSize, degree)
-		mci=findMotifs(data[('MCI',corr)], motifSize, degree)
-		ad=findMotifs(data[('AD',corr)], motifSize, degree)
+		nl=findMotifs(data,('NL',corr), motifSize, degree)
+		mci=findMotifs(data,('MCI',corr), motifSize, degree)
+		ad=findMotifs(data,('AD',corr), motifSize, degree)
 		
 		motifs = nl.items()
 		motifs = sorted(motifs,key=lambda x:-x[1].mean())
@@ -161,8 +177,14 @@ def plotMotifGraphs(data,motifSize,degree,numofmotifs):
 if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
+		
+	#plotMotifGraphs(data,3,10,10)
 	
-	statTest(data,3,10)
+	statTest(data,3,15)
+	statTest(data,4,10)
+	statTest(data,4,15)
+	#convertIDToGraph(142,3)
+	
 	
 
 	
