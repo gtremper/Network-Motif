@@ -75,22 +75,28 @@ def degvssizeAvg(data):
   plt.plot(degreedict.keys(), degreedict.values(), 'bo')
   plt.show()
 
-def degvssizeInd(data):
+def degvssizeInd(data, type):
   degreedict = {}
   for deg in range(1, 100, 5):
-    subdata = copy.deepcopy(data[('NL', 'corr')])
+    subdata = copy.deepcopy(data[type])
     print "degree: " + str(deg)
     avgSize = createGraphs2(subdata, deg)
     degreedict[deg] = avgSize
   
   plt.plot(degreedict.keys(), degreedict.values(), 'bo')
-  plt.show()
+  plt.ylabel('Size of Giant Component')
+  plt.xlabel('Degree')
+  plt.title('Size of Giant Component vs Degree for' + str(type))
+  plt.grid(True)
+  plt.savefig('Size of Giant Component vs Degree for' + str(type) + ".png", format='png')
+  plt.clf()
 
 if __name__ == '__main__':
     f = file("aznorbert_corrsd.pkl")
     myPickle = cPickle.Unpickler(f) 
     data = myPickle.load()
-    degvssizeInd(data);
+    for type in data.keys():
+      degvssizeInd(data, type);
     
     
     

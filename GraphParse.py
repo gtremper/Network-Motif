@@ -77,7 +77,7 @@ def findMotifs(data,key,motifSize,degree,usetotal=False):
 				motifs[iD] = [total if usetotal else percent]
 	
 	print '\nMotifs Done!'
-	
+		
 	for key,value in motifs.iteritems():
 		numZero = len(graphs)-len(value)
 		value.extend([0 for derp in xrange(numZero)])
