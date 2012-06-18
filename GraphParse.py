@@ -6,7 +6,7 @@ import os
 import cPickle as pickle
 import scipy.stats as stats
 
-USECACHE = True
+USECACHE = False
  
 #Out put a text file representation of graph
 def outputGraph(graph,name="OUTPUT.txt"):
@@ -49,17 +49,21 @@ def findMotifs(data,key,motifSize,degree,usetotal=False):
 	graphs = data[key]
 	motifs = {}
 	numstring ="/"+str(len(graphs))
-	counter = 1
-	for G in graphs:
+	rejected = 0
+	for index,G in enumerate(graphs):
+		#Cull bad graphs
+		if np.count_nonzero(G)<len(G)*degree:
+			rejected += 1
+			continue
+			
 		#calculate threshold
 		sortedWeights = np.sort(G,axis=None)
 		threshold = sortedWeights[-len(G)*degree-1]
 		#Print progress
-		sys.stdout.write("\r")
-		sys.stdout.write("Motif Finding Progress: "+str(counter)+numstring)
+		sys.stdout.write("\rMotif Finding Progress: "+str(index)+numstring)
 		sys.stdout.write(" Threshold: "+str(threshold))
 		sys.stdout.flush()
-		counter+=1
+		
 		#Output graph to txt file
 		graph = nx.DiGraph(G>threshold)
 		graph = nx.convert_node_labels_to_integers(graph,1)
@@ -71,17 +75,14 @@ def findMotifs(data,key,motifSize,degree,usetotal=False):
 		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
 		
 		for iD,total,percent in data:
-			if iD in motifs:
-				motifs[int(iD)].append(total if usetotal else percent)
-			else:
-				motifs[int(iD)] = [total if usetotal else percent]
+			motifs.setdefault(int(iD), []).append(total if usetotal else percent)
 		
 		
-	print '\nMotifs Done!'
+	print '\nMotifs Done! Graphs Rejected: '+str(rejected)
 	
 	#add zeros to graphs that didn't contain motifs
 	for key,value in motifs.iteritems():
-		numZero = len(graphs)-len(value)
+		numZero = len(graphs)-len(value)-rejected
 		value.extend([0 for derp in xrange(numZero)])
 		motifs[int(key)] = np.array(value)
 	
@@ -204,10 +205,8 @@ def plotMotifGraphs(data,motifSize,degree,numofmotifs,usetotal=False):
 		plt.ylim(ymin=0.0)
 		plt.legend( (NLplt[0], MCIplt[0], ADplt[0]), ('NL', 'MCI', 'AD') )
 		plt.grid(True)
-		if usetotal:
-			plt.savefig("result/TotalMotifDist-"+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
-		else:
-			plt.savefig("result/PercentMotifDist-"+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
+		header = 'result/' + ('Total' if usetotal else 'Percent') + 'MotifDis-'
+		plt.savefig(header+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
 		plt.clf()
 	
 
@@ -215,14 +214,17 @@ if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
 		
-	#plotMotifGraphs(data,3,10,10)
-	print 'Normal'
-	motifOrder(data,('NL','corr'),4 , 3, 10)
-	print 'MCI'
-	motifOrder(data,('MCI','corr'),4, 3, 10)
-	print 'AD'
-	motifOrder(data,('AD','corr'),4, 3, 10)
+	plotMotifGraphs(data,3,10,10)
 	
+	"""
+	print 'Normal'
+	motifOrder(data,('NL','corr'),3, 3, 10)
+	print 'MCI'
+	motifOrder(data,('MCI','corr'),3, 3, 10)
+	print 'AD'
+	motifOrder(data,('AD','corr'),3, 3, 10)
+	
+	"""
 	
 	
 
