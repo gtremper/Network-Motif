@@ -7,7 +7,7 @@ import cPickle as pickle
 import scipy.stats as stats
 from collections import defaultdict
 
-USECACHE = False
+USECACHE = True
 
 def outputGraph(graph,name="OUTPUT.txt"):
 	"""Output a textfile edgelist of graph"""
@@ -28,6 +28,7 @@ def convertIDToGraph(id,motifSize,save=False):
 	binary = bin(id);
 	adj = np.zeros(motifSize*motifSize)
 	for x in xrange(motifSize*motifSize):
+		x+=1
 		if binary[-x] == 'b':
 			break
 		adj[-x] = int(binary[-x])
@@ -38,6 +39,7 @@ def convertIDToGraph(id,motifSize,save=False):
 		plt.savefig("result/id-"+str(id)+"size-"+str(motifSize))
 	else:
 		plt.show()
+	plt.clf()
 
 def findMotifs(data,key,motifSize=3,degree=10,usetotal=False):
 	"""Main finding motifs routine"""
@@ -152,42 +154,54 @@ def motifStats(data, motifSize=3, degree=10, usetotal=False):
 	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
 	with open(filename,'w') as f:
 		f.write("Student's T test comparing both MCI and AD to NL.\n\n")
-		for corr in ('corr',):
+		for corr in ('corr','lcorr','lacorr'):
 			title = "P-values for "+corr+" data set compared to normal patients\n"
 			f.write(title)
 	
 			
-			#motifsNL=findMotifs(data,('NL',corr), motifSize, degree, usetotal)
+			motifsNL=findMotifs(data,('NL',corr), motifSize, degree, usetotal)
 			motifsMCI=findMotifs(data,('MCI',corr), motifSize, degree, usetotal)
 			motifsAD=findMotifs(data,('AD',corr), motifSize, degree, usetotal)
 			
-			mats = []
-			for i in xrange(108):	
-				x = np.random.rand(88,88)
-				x -= np.diag(np.diag(x))
-				mats.append(x)
-			rand = {}
-			rand['derp'] = mats
-			motifsNL=findMotifs(rand,'derp', motifSize, degree, usetotal)
+			#mats = []
+			#for i in xrange(108):	
+			#	x = np.random.rand(88,88)
+			#	x -= np.diag(np.diag(x))
+			#	mats.append(x)
+			#rand = {}
+			#rand['derp'] = mats
+			#motifsNL=findMotifs(rand,'derp', motifSize, degree, usetotal)
 		
 			allMotifs = list( set(motifsNL.keys())
 							& set(motifsAD.keys())
 							& set(motifsMCI.keys()) )
 			allMotifs.sort()
-			f.write("{0:>10}{1:>15}{2:>15}{3:>15}{4:>15}{5:>15}\n".format('MOTIF ID','MCI','AD','NORM Var','MCI Var', 'AD Var'))
+			f.write("{0:>10}{1:>15}{2:>15}{3:>15}{4:>15}{5:>15}{6:>15}{7:>15}{8:>15}\n".format(
+				'MOTIF ID','MCI','AD','Norm Mean','MCI Mean','AD Mean','NORM Std','MCI Std', 'AD Std'))
+			
+			motifStats = []
 			for key in allMotifs:
 				tMCI, probMCI = stats.ttest_ind(motifsMCI[key], motifsNL[key])
 				tAD, probAD = stats.ttest_ind(motifsAD[key], motifsNL[key])
-				normVar = motifsNL[key].var()
-				mciVar = motifsMCI[key].var()
-				adVar = motifsAD[key].var()
+				motifStats.append((key,probMCI,probAD))
+			
+			motifStats.sort(key=lambda x: min(x))
+				
+			for key, probMCI, probAD in motifStats:
+				normMean = motifsNL[key].mean()
+				mciMean = motifsMCI[key].mean()
+				adMean = motifsAD[key].mean()
+				normVar = motifsNL[key].std()
+				mciVar = motifsMCI[key].std()
+				adVar = motifsAD[key].std()
 				if probMCI<0.01 or probAD<0.01:
-					line = "**{0:>8}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}\n"
+					star = "**"
 				elif probMCI<0.1 or probAD<0.1:
-					line = "*{0:>9}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}\n"
+					star = "*"
 				else:
-					line = "{0:>10}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}\n"
-				f.write(line.format(str(int(key)), probMCI, probAD,normVar,mciVar,adVar))
+					star = ""
+				line = star+"{0:>"+str(10-len(star))+"}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}{6:>15.3}{7:>15.3}{8:>15.3}\n"
+				f.write(line.format(str(int(key)), probMCI, probAD,normMean,mciMean,adMean,normVar,mciVar,adVar))
 			f.write("\n\n")
 
 					
@@ -248,9 +262,24 @@ if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
 	
+	#motifStats(data,3,17)
 	#motifStats(data,3,10)
-	plotMotifGraphs(data,3,10,10)
+	#motifStats(data,3,11)
+	#motifStats(data,3,12)
+	#motifStats(data,3,13)
+	#motifStats(data,3,14)
+	#motifStats(data,3,15)
 	
+	#motifStats(data,4,10)
+	
+	convertIDToGraph(14,3,True)
+	convertIDToGraph(166,3,True)
+	convertIDToGraph(140,3,True)
+	convertIDToGraph(164,3,True)
+	convertIDToGraph(6,3,True)
+	convertIDToGraph(238,3,True)
+	convertIDToGraph(78,3,True)
+
 	
 	
 	
