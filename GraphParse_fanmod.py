@@ -7,7 +7,7 @@ import cPickle as pickle
 import scipy.stats as stats
 import re
 
-USECACHE = True
+USECACHE = False
 
 #Also, I thought of a good test for your programs.
 #Generate 100 random correlation matrices via
@@ -119,7 +119,7 @@ def outputGraph(graph,name="OUTPUT.txt"):
 #Find motifs of motifSize in G
 def findSingleMotif(G,motifSize):
 	outputGraph(G)
-	os.system("./fanmod_command_line_linux " +str(motifSize) + " 100000 1 result2/OUTPUT.txt 1 0 0 2 0 0 0 1 3 3 result2/MotifCount.txt 0 0")
+	os.system("./fanmod_command_line_linux " +str(motifSize) + " 100000 1 result2/OUTPUT.txt 1 0 0 2 0 0 0 1 3 3 result2/MotifCount.txt 0 1")
 	data = parseOutput("result2/MotifCount.txt")
 	return data	
 
@@ -179,7 +179,7 @@ def findMotifs(data,key,motifSize,degree,usetotal=False, useFanmod=True):
 			nx.write_edgelist(graph,f,data=False)
 		#Jenky way to use c++ motif finder in python
 		if useFanmod:
-			os.system("./fanmod_command_line_linux " +str(motifSize) + " 100000 1 result2/OUTPUT.txt 1 0 0 2 0 0 0 1 3 3 result2/MotifCount.txt 0 0")
+			os.system("./fanmod_command_line_linux " +str(motifSize) + " 100000 1 result2/OUTPUT.txt 1 0 0 2 0 0 0 0 3 3 result2/MotifCount.txt 0 1")
 			data = parseOutput("result2/MotifCount.txt")
 		else:
 			os.system("./Kavosh " + str(motifSize))
@@ -221,7 +221,7 @@ def motifOrder(data,key,orderSize,motifSize,degree):
 		with open('result2/OUTPUT.txt','wb') as f:
 			nx.write_edgelist(graph,f,data=False)
 		#Jenky way to use c++ motif finder in python
-		os.system("./fanmod_command_line_linux " +str(motifSize) + " 100000 1 result2/OUTPUT.txt 1 0 0 2 0 0 0 1 3 3 result2/MotifCount.txt 0 0")
+		os.system("./fanmod_command_line_linux " +str(motifSize) + " 100000 1 result2/OUTPUT.txt 1 0 0 2 0 0 0 1 3 3 result2/MotifCount.txt 0 1")
 		data = parseOutput("result2/MotifCount.txt")
 		
 		order = []
@@ -325,11 +325,89 @@ def plotMotifGraphs(data,motifSize,degree,numofmotifs,usetotal=False):
 			plt.savefig("result2/PercentMotifDist-"+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
 		plt.clf()
 
-if __name__ == '__main__':
-#	with open("aznorbert_corrsd.pkl","rb") as f:
-#		data = pickle.load(f)
+def addRandom(data):
+	for corr in ['corr', 'lcorr', 'lacorr']:
+		for i in range(100):
+			x = np.random.rand(88, 88)
+			y = x - np.diag(np.diag(x))
+			if i == 0:
+				data[('RAN', corr)] = [y]
+			else:
+				data[('RAN', corr)].append(y)
+	return data
+	
+def plotMotifGraphsWithRandom(data,motifSize,degree,numofmotifs,usetotal=False):
+	data = addRandom(data);
+	for corr in ('corr','lcorr','lacorr'):
+		nl=findMotifs(data,('NL',corr), motifSize, degree,usetotal)
+		mci=findMotifs(data,('MCI',corr), motifSize, degree,usetotal)
+		ad=findMotifs(data,('AD',corr), motifSize, degree,usetotal)
+		ran=findMotifs(data, ('RAN', corr), motifSize, degree, usetotal)
 		
-#	plotMotifGraphs(data,3,10,10)
+		motifs = nl.items()
+		motifs = sorted(motifs,key=lambda x:-x[1].mean())
+		keys = [int(x[0]) for x in motifs[:numofmotifs]]
+		
+		meansNL = []
+		meansMCI = []
+		meansAD = []
+		meansRAN = []
+		stdNL = []
+		stdMCI = []
+		stdAD = []
+		stdRAN = []
+		for key in keys:			
+			if key in nl:
+				meansNL.append(nl[key].mean())
+				stdNL.append(nl[key].std())
+			else:
+				meansNL.append(0.0)
+				stdNL.append(0.0)
+			if key in mci:
+				meansMCI.append(mci[key].mean())
+				stdMCI.append(mci[key].std())
+			else:
+				meansMCI.append(0.0)
+				stdMCI.append(0.0)
+			if key in ad:
+				meansAD.append(ad[key].mean())
+				stdAD.append(ad[key].std())
+			else:
+				meansAD.append(0.0)
+				stdAD.append(0.0)
+			if key in ran:
+				meansRAN.append(ran[key].mean())
+				stdRAN.append(ran[key].std())
+			else:
+				meansRAN.append(0.0)
+				stdRAN.append(0.0)
+		
+		ind = np.arange(numofmotifs)
+		width = 0.15 
+
+		NLplt = plt.bar(ind, meansNL, width, color='b', yerr=stdNL, ecolor='y')
+		MCIplt = plt.bar(ind+width, meansMCI, width, color='y', yerr=stdMCI, ecolor='b')
+		ADplt = plt.bar(ind+width+width, meansAD, width, color='g', yerr=stdAD, ecolor='r')
+		RANplt = plt.bar(ind+width*3, meansRAN, width, color='m', yerr=stdRAN, ecolor='k')
+
+		plt.ylabel('Average number of motifs')
+		plt.xlabel('Motif ID')
+		plt.title('Fanmod: Motif size '+str(motifSize) +' distribution for '+corr+" with average degree "+str(degree))
+		plt.xticks(ind+width+width/2., keys)
+		plt.ylim(ymin=0.0)
+		plt.legend( (NLplt[0], MCIplt[0], ADplt[0], RANplt[0]), ('NL', 'MCI', 'AD', 'RANDOM') )
+		plt.grid(True)
+		if usetotal:
+			plt.savefig("result2/TotalMotifDist-"+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
+		else:
+			plt.savefig("result2/PercentMotifDist-"+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
+		plt.clf()
+
+if __name__ == '__main__':
+	with open("aznorbert_corrsd.pkl","rb") as f:
+		data = pickle.load(f)
+		
+	plotMotifGraphsWithRandom(data,3,10,10)
 #	plotMotifGraphs(data,3,12,10)
 #	plotMotifGraphs(data,3,15,10)
 #	plotMotifGraphs(data,4,10,10)
@@ -355,7 +433,7 @@ if __name__ == '__main__':
 #	statTest(data,4,15)
 
 	
-	generateRandonGraphsStats()
+	#generateRandonGraphsStats()
 	
 	
 	
