@@ -45,8 +45,10 @@ def convertIDToGraph(id,motifSize,save=False):
 		plt.show()
 	plt.clf()
 
-def findMotifs(data,key,motifSize=3,degree=10,usetotal=False):
+def findMotifs(data,key,motifSize=3,degree=10,randomize=False):
 	"""Main finding motifs routine"""
+	usetotal = False
+	
 	#Check cache
 	filename = str(key)+'s'+str(int(motifSize))+'d'+str(int(degree))+str(usetotal)+".pkl"
 	if os.path.exists('cache/'+filename) and USECACHE:
@@ -83,6 +85,8 @@ def findMotifs(data,key,motifSize=3,degree=10,usetotal=False):
 		#Output graph to txt file
 		graph = nx.DiGraph(G>threshold)
 		graph = nx.convert_node_labels_to_integers(graph,1)
+		if randomize:
+			graph = gh.randomize_graph(graph, 3)
 		with open('result/OUTPUT.txt','wb') as f:
 			f.write(str(len(graph)) + '\n')
 			nx.write_edgelist(graph,f,data=False)
@@ -223,7 +227,7 @@ def findMotifs2(data,key,motifSize=3,degree=10,usetotal=False):
 			
 	return motifs
 
-def motifStats2(data, motifSize=3, degree=10, usetotal=False):
+def motifStatsSwap(data, motifSize=3, degree=10, usetotal=False):
 	"""Outputs text file with stats on the motifs in data"""
 			
 	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
@@ -276,7 +280,7 @@ def motifStats2(data, motifSize=3, degree=10, usetotal=False):
 				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
 			f.write("\n\n")	
 
-def motifStats3(data, motifSize=3, degree=10, usetotal=False):
+def motifStatsShuffle(data, motifSize=3, degree=10, usetotal=False):
 	"""Outputs text file with stats on the motifs in data"""
 			
 	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
@@ -568,9 +572,8 @@ def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 		plt.savefig(header+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
 		plt.clf()
 		
-def PDFstats(data,filename):
+def PDFstats(data, filename):
 	
-	data['rand'] = genRandMats(100)
 	motifsRAND = findMotifs(data,'rand')
 	
 	filename = "result/" + filename + ".tex"
@@ -580,9 +583,9 @@ def PDFstats(data,filename):
 		"""
 		\\documentclass{article}
 		\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl}
-		\\definecolor{yellow}{rgb}{1,1,0}
-		\\definecolor{orange}{rgb}{1,0.647,0}
-		\\definecolor{red}{rgb}{1,0,0}
+		\\definecolor{yellow}{RGB}{255,255,70}
+		\\definecolor{orange}{RGB}{255,165,70}
+		\\definecolor{red}{RGB}{255,70,70}
 		\\title{Motif Data}
 		\\author{Graham Tremper}
 		\\date{}
@@ -616,6 +619,7 @@ def PDFstats(data,filename):
 			""" + "\\caption{Motif T-test results from "+corr+" data}" +
 			"""
 			\\centering
+			\\vspace{2pt}
 			\\begin{tabular}{|c|c|c|c|c|c|c|}
 			\\hline
 			\\rowcolor[gray]{0.85} 
