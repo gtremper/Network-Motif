@@ -333,62 +333,6 @@ def motifStats3(data, motifSize=3, degree=10, usetotal=False):
 				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
 			f.write("\n\n")	
 			
-def motifStats3(data, motifSize=3, degree=10, usetotal=False):
-	"""Outputs text file with stats on the motifs in data"""
-			
-	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
-	with open(filename,'w') as f:
-		f.write("Student's T test comparing both AD/NL/MCI to Random.\n\n")
-		for corr in ['corr']:
-			title = "P-values for "+corr+" data set compared to random generated graphs\n"
-			f.write(title)
-			
-			data[('MCIR', corr)] = genRandomGraphs(data[('MCI', corr)], degree, 119) 
-			data[('ADR', corr)] = genRandomGraphs(data[('AD', corr)], degree, 39) 
-			data[('NLR', corr)] = genRandomGraphs(data[('NL', corr)], degree, 108)
-			 
-			motifsNL=findMotifs(data,('NL',corr), motifSize, degree, usetotal)
-			motifsMCI=findMotifs(data,('MCI',corr), motifSize, degree, usetotal)
-			motifsAD=findMotifs(data,('AD',corr), motifSize, degree, usetotal)
-			motifsNLR=findMotifs(data,('NLR',corr), motifSize, degree, usetotal)
-			motifsMCIR=findMotifs(data,('MCIR',corr), motifSize, degree, usetotal)
-			motifsADR=findMotifs(data,('ADR',corr), motifSize, degree, usetotal)
-		
-			allMotifs = list( set(motifsNL.keys())
-							& set(motifsAD.keys())
-							& set(motifsMCI.keys())
-							& set(motifsNLR.keys())
-							& set(motifsADR.keys())
-							& set(motifsMCIR.keys()) )
-			allMotifs.sort()
-			f.write("{0:>10}{1:>15}{2:>15}{3:>15}{4:>15}{5:>15}{6:>15}{7:>15}{8:>15}{9:>15}\n".format(
-				'MOTIF ID','NL', 'MCI','AD', 'NLR Mean','MCIR Mean','ADR Mean', 'NLR Std','MCIR Std', 'ADR Std'))
-			
-			motifStats = []
-			for key in allMotifs:
-				tMCI, probMCI = stats.ttest_ind(motifsMCI[key], motifsMCIR[key])
-				tAD, probAD = stats.ttest_ind(motifsAD[key], motifsADR[key])
-				tNL, probNL = stats.ttest_ind(motifsNL[key], motifsNLR[key])
-				motifStats.append((key,probNL,probMCI,probAD))
-			
-			motifStats.sort(key=lambda x: min(x))
-				
-			for key, probNL, probMCI, probAD in motifStats:
-				normRMean = motifsNLR[key].mean()
-				mciRMean = motifsMCIR[key].mean()
-				adRMean = motifsADR[key].mean()
-				normRVar = motifsNLR[key].std()
-				mciRVar = motifsMCIR[key].std()
-				adRVar = motifsADR[key].std()
-				if probMCI<0.01 or probAD<0.01 or probNL<0.01:
-					star = "**"
-				elif probMCI<0.1 or probAD<0.1 or probNL<0.01:
-					star = "*"
-				else:
-					star = ""
-				line = star+"{0:>"+str(10-len(star))+"}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}{6:>15.3}{7:>15.3}{8:>15.3}{9:>15.3}\n"
-				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
-			f.write("\n\n")	
 			
 def choose_and_remove( items ):
     # pick an item index
@@ -579,7 +523,7 @@ def PDFstats(data,filename):
 		f.write(
 		"""
 		\\documentclass{article}
-		\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl}
+		\\usepackage{amsmath,graphicx,fancyhdr,colortbl}
 		\\definecolor{yellow}{rgb}{1,1,0}
 		\\definecolor{orange}{rgb}{1,0.647,0}
 		\\definecolor{red}{rgb}{1,0,0}
@@ -654,8 +598,8 @@ if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	PDFstats(data,"Motif_Statistics")
-	#motifStats(data)
+	#PDFstats(data,"Motif_Statistics")
+	motifStats2(data)
 	
 	"""
 	print 'Normal'
