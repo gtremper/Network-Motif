@@ -1,3 +1,4 @@
+import math
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
@@ -64,9 +65,9 @@ def findMotifs(data,key,motifSize=3,degree=10,usetotal=False):
 	rejected = 0
 	for index,G in enumerate(graphs):
 		#Cull bad graphs
-		if np.count_nonzero(G)<len(G)*degree:
-			rejected += 1
-			continue
+		#if np.count_nonzero(G)<len(G)*degree:
+		#	rejected += 1
+		#	continue
 			
 		#calculate threshold
 		sortedWeights = np.sort(G,axis=None)
@@ -105,11 +106,11 @@ def findMotifs(data,key,motifSize=3,degree=10,usetotal=False):
 		
 	return motifs
 
-def motifOrder(data,key,orderSize=3,motifSize=3,degree=10):
+def motifOrder(data,key,num,orderSize=3,motifSize=3,degree=10):
 	"""Sorts graphs into bins based on motif frequency ordering"""	
 	if key == "rand":
 		graphs = []
-		for i in xrange(100):	
+		for i in xrange(num):	
 			x = np.random.rand(88,88)
 			x -= np.diag(np.diag(x))
 			graphs.append(x)
@@ -149,7 +150,7 @@ def motifOrder(data,key,orderSize=3,motifSize=3,degree=10):
 		
 
 def motifStats(data, motifSize=3, degree=10, usetotal=False):
-	"""Outputs text file with stats on the motifs in data"""
+	"""Outputs pdf file with stats on the motifs in data"""
 			
 	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
 	with open(filename,'w') as f:
@@ -175,7 +176,7 @@ def motifStats(data, motifSize=3, degree=10, usetotal=False):
 			allMotifs = list( set(motifsNL.keys())
 							& set(motifsAD.keys())
 							& set(motifsMCI.keys()) )
-			allMotifs.sort()
+
 			f.write("{0:>10}{1:>15}{2:>15}{3:>15}{4:>15}{5:>15}{6:>15}{7:>15}{8:>15}\n".format(
 				'MOTIF ID','MCI','AD','Norm Mean','MCI Mean','AD Mean','NORM Std','MCI Std', 'AD Std'))
 			
@@ -204,6 +205,13 @@ def motifStats(data, motifSize=3, degree=10, usetotal=False):
 				f.write(line.format(str(int(key)), probMCI, probAD,normMean,mciMean,adMean,normVar,mciVar,adVar))
 			f.write("\n\n")
 
+def genRandMats(num):
+	mats = []
+	for i in xrange(num):
+		x = np.random.rand(88,88)
+		x -= np.diag(np.diag(x))
+		mats.append(x)
+	return mats
 					
 def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 	"""Draws graph compairing average motif count between samples in the data"""
@@ -223,7 +231,7 @@ def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 		
 		motifs = nl.items()
 		motifs = sorted(motifs,key=lambda x:-x[1].mean())
-		keys = [int(x[0]) for x in motifs[:numofmotifs]]
+		keys = [int(key) for key,value in motifs[:numofmotifs]]
 		
 		meansNL = []
 		meansMCI = []
@@ -256,32 +264,99 @@ def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 		header = 'result/TotalMotifDis-' if usetotal else 'result/PercentMotifDis-'
 		plt.savefig(header+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
 		plt.clf()
+		
+def PDFstats(data,filename):
 	
+	data['rand'] = genRandMats(100)
+	motifsRAND = findMotifs(data,'rand')
+	
+	filename = "result/" + filename + ".tex"
+	
+	with open(filename,'wb') as f:
+		f.write(
+		"""
+		\\documentclass{article}
+		\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl}
+		\\definecolor{yellow}{rgb}{1,1,0}
+		\\definecolor{orange}{rgb}{1,0.647,0}
+		\\definecolor{red}{rgb}{1,0,0}
+		\\title{Motif Data}
+		\\author{Graham Tremper}
+		\\date{}
+		\\fancyhead{}
+		\\begin{document}
+		""")
+		for corr in ('corr','lcorr','lacorr'):
+			motifsNL = findMotifs(data, ('NL',corr))
+			motifsMCI = findMotifs(data, ('MCI',corr))
+			motifsAD = findMotifs(data, ('AD',corr))
+			
+			allMotifs = list( set(motifsNL.keys())
+							& set(motifsAD.keys())
+							& set(motifsMCI.keys()) )
+							
+			motifStats = []
+			for key in allMotifs:
+				c1 = stats.ttest_ind(motifsMCI[key], motifsNL[key])
+				c2 = stats.ttest_ind(motifsAD[key], motifsNL[key])
+				c3 = stats.ttest_ind(motifsMCI[key], motifsAD[key])
+				c4 = stats.ttest_ind(motifsNL[key], motifsRAND[key])
+				c5 = stats.ttest_ind(motifsMCI[key], motifsRAND[key])
+				c6 = stats.ttest_ind(motifsAD[key], motifsRAND[key])
+				motifStats.append((key,c1,c2,c3,c4,c5,c6))
+			
+			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
+						
+			f.write(
+			"""
+			\\begin{table}[t]
+			""" + "\\caption{Motif T-test results from "+corr+" data}" +
+			"""
+			\\centering
+			\\begin{tabular}{|c|c|c|c|c|c|c|}
+			\\hline
+			\\rowcolor[gray]{0.85} 
+			Key	& MCI to Norm & AD to Norm & MCI to AD & Norm to Rand & MCI to Rand & AD to Rand \\\\ \\hline
+			""")
+			for stat in motifStats:
+				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
+				for sign,col in stat[1:]:
+					cell = " & {0:.3}".format(col)
+					if sign > 0:
+						cell += '(+)'
+					else:
+						cell += '(-)'
+					
+					if col <= 0.01:
+						cell += " \\cellcolor{red} "
+					elif col <= 0.05:
+						cell += " \\cellcolor{orange}"
+					elif col <= 0.1:
+						cell += " \\cellcolor{yellow}"
+					f.write(cell)
+				f.write("\\\\ \\hline\n")
+				
+			f.write(
+			"""
+			\\end{tabular}
+			\\end{table}
+			""")
+		
+		f.write("\\end{document}\n")
+	
+	os.system("pdflatex -output-directory result " + filename)
+	os.system("rm result/*.tex result/*.log result/*.aux")
 
 if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	#motifStats(data,3,17)
-	#motifStats(data,3,10)
-	#motifStats(data,3,11)
-	#motifStats(data,3,12)
-	#motifStats(data,3,13)
-	#motifStats(data,3,14)
-	#motifStats(data,3,15)
 	
-	#motifStats(data,4,10)
-	
-	convertIDToGraph(14,3,True)
-	convertIDToGraph(166,3,True)
-	convertIDToGraph(140,3,True)
-	convertIDToGraph(164,3,True)
-	convertIDToGraph(6,3,True)
-	convertIDToGraph(238,3,True)
-	convertIDToGraph(78,3,True)
 
 	
-	
+	PDFstats(data,"Motif_Statistics")
+	#motifStats(data)
+
 	
 	
 	
@@ -296,10 +371,6 @@ if __name__ == '__main__':
 	print 'Random'
 	motifOrder(data,"rand",3,3,10)
 	"""
-	
-	#for i in xrange(108):
-	#	x = np.random.rand(88,88)
-	#	x -= np.diag(x)
 		
 	
 
