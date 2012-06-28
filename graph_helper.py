@@ -7,8 +7,11 @@ def randomize_graph(G, numpasses):
         edge2 = random.choice(G.edges())
         a,b = edge1
         c,d = edge2
-        if (a, d) in G.edges() or (c, b) in G.edges():
-            continue
+        while (a, d) in G.edges() or (c, b) in G.edges():
+            edge1 = random.choice(G.edges())
+            edge2 = random.choice(G.edges())
+            a,b = edge1
+            c,d = edge2
         G.add_edge(a, d)
         G.add_edge(c, b)
         G.remove_edge(a, b)
