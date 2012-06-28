@@ -5,7 +5,10 @@ import sys
 import os
 import cPickle as pickle
 import scipy.stats as stats
+import graph_helper as gh
+import random
 from collections import defaultdict
+from math import floor
 
 USECACHE = True
 
@@ -145,9 +148,309 @@ def motifOrder(data,key,orderSize=3,motifSize=3,degree=10):
 	for key,value in total:
 		print str(key)+": " + str(value)
 		
+def genRandomGraphs(graphs, degree, num):
+	mats = []
+	for i in xrange(num):	
+		x = np.random.rand(88,88)
+		x -= np.diag(np.diag(x))
+		mats.append(x)
+	return mats
 
+def findMotifs2(data,key,motifSize=3,degree=10,usetotal=False):
+	"""Main finding motifs routine"""
+	#Check cache
+	filename = str(key)+'s'+str(int(motifSize))+'d'+str(int(degree))+str(usetotal)+"random.pkl"
+	
+	if os.path.exists('cache/'+filename) and USECACHE:
+		print "in cache"
+		with open('cache/'+filename,"rb") as f:
+			return pickle.load(f)
+	
+	if key == "rand":
+		graphs = []
+		for i in xrange(100):	
+			x = np.random.rand(88,88)
+			x -= np.diag(np.diag(x))
+			graphs.append(x)
+	else:
+		graphs = data[key]
+	
+	motifs = defaultdict(list)
+	numstring ="/"+str(len(graphs))
+	rejected = 0
+	for index,G in enumerate(graphs):
+		#Cull bad graphs
+		if np.count_nonzero(G)<len(G)*degree:
+			rejected += 1
+			continue
+			
+		#calculate threshold
+		sortedWeights = np.sort(G,axis=None)
+		threshold = sortedWeights[-len(G)*degree-1]
+		#Print progress
+		sys.stdout.write("\rMotif Finding Progress: "+str(index)+numstring)
+		sys.stdout.write(" Threshold: "+str(threshold))
+		sys.stdout.flush()
 		
+		#Output graph to txt file
+		graph = nx.DiGraph(G>threshold)
+		graph = nx.convert_node_labels_to_integers(graph,1)
+		graph = gh.randomize_graph(graph, 3)
+		with open('result/OUTPUT.txt','wb') as f:
+			f.write(str(len(graph)) + '\n')
+			nx.write_edgelist(graph,f,data=False)
+		#Jenky way to use c++ motif finder in python
+		os.system("./Kavosh "+str(motifSize))
+		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
+		
+		for iD,total,percent in data:
+			motifs[int(iD)].append(total if usetotal else percent)
+		
+	print '\nMotifs Done! Graphs Rejected: '+str(rejected)
+	
+	#add zeros to graphs that didn't contain motifs
+	for key,value in motifs.iteritems():
+		numZero = len(graphs)-len(value)-rejected
+		value.extend([0 for derp in xrange(numZero)])
+		motifs[int(key)] = np.array(value)
+	
+	motifs = dict(motifs)
+	#add motifs to cache
+	if USECACHE:
+		with open('cache/'+filename,'wb') as f:
+			pickle.dump(motifs,f)
+			
+	return motifs
 
+def motifStats2(data, motifSize=3, degree=10, usetotal=False):
+	"""Outputs text file with stats on the motifs in data"""
+			
+	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
+	with open(filename,'w') as f:
+		f.write("Student's T test comparing both AD/NL/MCI to Random.\n\n")
+		for corr in ['corr']:
+			title = "P-values for "+corr+" data set compared to random generated graphs\n"
+			f.write(title)
+
+			motifsNL=findMotifs(data,('NL',corr), motifSize, degree, usetotal)
+			motifsMCI=findMotifs(data,('MCI',corr), motifSize, degree, usetotal)
+			motifsAD=findMotifs(data,('AD',corr), motifSize, degree, usetotal)
+			motifsNLR=findMotifs2(data,('NL',corr), motifSize, degree, usetotal)
+			motifsMCIR=findMotifs2(data,('MCI',corr), motifSize, degree, usetotal)
+			motifsADR=findMotifs2(data,('AD',corr), motifSize, degree, usetotal)
+		
+			allMotifs = list( set(motifsNL.keys())
+							& set(motifsAD.keys())
+							& set(motifsMCI.keys())
+							& set(motifsNLR.keys())
+							& set(motifsADR.keys())
+							& set(motifsMCIR.keys()) )
+			allMotifs.sort()
+			f.write("{0:>10}{1:>15}{2:>15}{3:>15}{4:>15}{5:>15}{6:>15}{7:>15}{8:>15}{9:>15}\n".format(
+				'MOTIF ID','NL', 'MCI','AD', 'NLR Mean','MCIR Mean','ADR Mean', 'NLR Std','MCIR Std', 'ADR Std'))
+			
+			motifStats = []
+			for key in allMotifs:
+				tMCI, probMCI = stats.ttest_ind(motifsMCI[key], motifsMCIR[key])
+				tAD, probAD = stats.ttest_ind(motifsAD[key], motifsADR[key])
+				tNL, probNL = stats.ttest_ind(motifsNL[key], motifsNLR[key])
+				motifStats.append((key,probNL,probMCI,probAD))
+			
+			motifStats.sort(key=lambda x: min(x))
+				
+			for key, probNL, probMCI, probAD in motifStats:
+				normRMean = motifsNLR[key].mean()
+				mciRMean = motifsMCIR[key].mean()
+				adRMean = motifsADR[key].mean()
+				normRVar = motifsNLR[key].std()
+				mciRVar = motifsMCIR[key].std()
+				adRVar = motifsADR[key].std()
+				if probMCI<0.01 or probAD<0.01 or probNL<0.01:
+					star = "**"
+				elif probMCI<0.1 or probAD<0.1 or probNL<0.01:
+					star = "*"
+				else:
+					star = ""
+				line = star+"{0:>"+str(10-len(star))+"}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}{6:>15.3}{7:>15.3}{8:>15.3}{9:>15.3}\n"
+				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
+			f.write("\n\n")	
+
+def motifStats3(data, motifSize=3, degree=10, usetotal=False):
+	"""Outputs text file with stats on the motifs in data"""
+			
+	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
+	with open(filename,'w') as f:
+		f.write("Student's T test comparing both AD/NL/MCI to Random.\n\n")
+		for corr in ['corr']:
+			title = "P-values for "+corr+" data set compared to random generated graphs\n"
+			f.write(title)
+			
+			data[('MCIR', corr)] = genRandomGraphs(data[('MCI', corr)], degree, 119) 
+			data[('ADR', corr)] = genRandomGraphs(data[('AD', corr)], degree, 39) 
+			data[('NLR', corr)] = genRandomGraphs(data[('NL', corr)], degree, 108)
+			 
+			motifsNL=findMotifs(data,('NL',corr), motifSize, degree, usetotal)
+			motifsMCI=findMotifs(data,('MCI',corr), motifSize, degree, usetotal)
+			motifsAD=findMotifs(data,('AD',corr), motifSize, degree, usetotal)
+			motifsNLR=findMotifs(data,('NLR',corr), motifSize, degree, usetotal)
+			motifsMCIR=findMotifs(data,('MCIR',corr), motifSize, degree, usetotal)
+			motifsADR=findMotifs(data,('ADR',corr), motifSize, degree, usetotal)
+		
+			allMotifs = list( set(motifsNL.keys())
+							& set(motifsAD.keys())
+							& set(motifsMCI.keys())
+							& set(motifsNLR.keys())
+							& set(motifsADR.keys())
+							& set(motifsMCIR.keys()) )
+			allMotifs.sort()
+			f.write("{0:>10}{1:>15}{2:>15}{3:>15}{4:>15}{5:>15}{6:>15}{7:>15}{8:>15}{9:>15}\n".format(
+				'MOTIF ID','NL', 'MCI','AD', 'NLR Mean','MCIR Mean','ADR Mean', 'NLR Std','MCIR Std', 'ADR Std'))
+			
+			motifStats = []
+			for key in allMotifs:
+				tMCI, probMCI = stats.ttest_ind(motifsMCI[key], motifsMCIR[key])
+				tAD, probAD = stats.ttest_ind(motifsAD[key], motifsADR[key])
+				tNL, probNL = stats.ttest_ind(motifsNL[key], motifsNLR[key])
+				motifStats.append((key,probNL,probMCI,probAD))
+			
+			motifStats.sort(key=lambda x: min(x))
+				
+			for key, probNL, probMCI, probAD in motifStats:
+				normRMean = motifsNLR[key].mean()
+				mciRMean = motifsMCIR[key].mean()
+				adRMean = motifsADR[key].mean()
+				normRVar = motifsNLR[key].std()
+				mciRVar = motifsMCIR[key].std()
+				adRVar = motifsADR[key].std()
+				if probMCI<0.01 or probAD<0.01 or probNL<0.01:
+					star = "**"
+				elif probMCI<0.1 or probAD<0.1 or probNL<0.01:
+					star = "*"
+				else:
+					star = ""
+				line = star+"{0:>"+str(10-len(star))+"}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}{6:>15.3}{7:>15.3}{8:>15.3}{9:>15.3}\n"
+				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
+			f.write("\n\n")	
+			
+def motifStats3(data, motifSize=3, degree=10, usetotal=False):
+	"""Outputs text file with stats on the motifs in data"""
+			
+	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
+	with open(filename,'w') as f:
+		f.write("Student's T test comparing both AD/NL/MCI to Random.\n\n")
+		for corr in ['corr']:
+			title = "P-values for "+corr+" data set compared to random generated graphs\n"
+			f.write(title)
+			
+			data[('MCIR', corr)] = genRandomGraphs(data[('MCI', corr)], degree, 119) 
+			data[('ADR', corr)] = genRandomGraphs(data[('AD', corr)], degree, 39) 
+			data[('NLR', corr)] = genRandomGraphs(data[('NL', corr)], degree, 108)
+			 
+			motifsNL=findMotifs(data,('NL',corr), motifSize, degree, usetotal)
+			motifsMCI=findMotifs(data,('MCI',corr), motifSize, degree, usetotal)
+			motifsAD=findMotifs(data,('AD',corr), motifSize, degree, usetotal)
+			motifsNLR=findMotifs(data,('NLR',corr), motifSize, degree, usetotal)
+			motifsMCIR=findMotifs(data,('MCIR',corr), motifSize, degree, usetotal)
+			motifsADR=findMotifs(data,('ADR',corr), motifSize, degree, usetotal)
+		
+			allMotifs = list( set(motifsNL.keys())
+							& set(motifsAD.keys())
+							& set(motifsMCI.keys())
+							& set(motifsNLR.keys())
+							& set(motifsADR.keys())
+							& set(motifsMCIR.keys()) )
+			allMotifs.sort()
+			f.write("{0:>10}{1:>15}{2:>15}{3:>15}{4:>15}{5:>15}{6:>15}{7:>15}{8:>15}{9:>15}\n".format(
+				'MOTIF ID','NL', 'MCI','AD', 'NLR Mean','MCIR Mean','ADR Mean', 'NLR Std','MCIR Std', 'ADR Std'))
+			
+			motifStats = []
+			for key in allMotifs:
+				tMCI, probMCI = stats.ttest_ind(motifsMCI[key], motifsMCIR[key])
+				tAD, probAD = stats.ttest_ind(motifsAD[key], motifsADR[key])
+				tNL, probNL = stats.ttest_ind(motifsNL[key], motifsNLR[key])
+				motifStats.append((key,probNL,probMCI,probAD))
+			
+			motifStats.sort(key=lambda x: min(x))
+				
+			for key, probNL, probMCI, probAD in motifStats:
+				normRMean = motifsNLR[key].mean()
+				mciRMean = motifsMCIR[key].mean()
+				adRMean = motifsADR[key].mean()
+				normRVar = motifsNLR[key].std()
+				mciRVar = motifsMCIR[key].std()
+				adRVar = motifsADR[key].std()
+				if probMCI<0.01 or probAD<0.01 or probNL<0.01:
+					star = "**"
+				elif probMCI<0.1 or probAD<0.1 or probNL<0.01:
+					star = "*"
+				else:
+					star = ""
+				line = star+"{0:>"+str(10-len(star))+"}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}{6:>15.3}{7:>15.3}{8:>15.3}{9:>15.3}\n"
+				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
+			f.write("\n\n")	
+			
+def choose_and_remove( items ):
+    # pick an item index
+    if items:
+        index = random.randrange( len(items) )
+        return items.pop(index)
+    # nothing left!
+    return None
+			
+def createfakeGroups(data):
+	newdata ={}
+	for corr in  ('corr','lcorr','lacorr'):
+		newdata[('NL', corr)] = []
+		newdata[('AD', corr)] = []
+		newdata[('MCI', corr)] = []
+		
+		adlen = len(data[('AD', corr)]) 
+		nllen = len(data[('NL', corr)])
+		mcilen = len(data[('MCI', corr)])
+		total = adlen + nllen + mcilen
+		
+		myList = [nllen, adlen, mcilen]
+		for i in range(3):
+			n = int(float(myList[i])/float(total) * nllen)
+			for j in range(n):
+				if i == 0:
+					g = choose_and_remove(data[('NL', corr)])
+					newdata[('NL', corr)].append(g)
+				if i == 1:
+					g = choose_and_remove(data[('AD', corr)])
+					newdata[('NL', corr)].append(g)
+				if i == 2:
+					g = choose_and_remove(data[('MCI', corr)])
+					newdata[('NL', corr)].append(g)
+		
+		for i in range(3):
+			n = int(float(myList[i])/float(total) * adlen)
+			for j in range(n):
+				if i == 0:
+					g = choose_and_remove(data[('NL', corr)])
+					newdata[('AD', corr)].append(g)
+				if i == 1:
+					g = choose_and_remove(data[('AD', corr)])
+					newdata[('AD', corr)].append(g)
+				if i == 2:
+					g = choose_and_remove(data[('MCI', corr)])
+					newdata[('AD', corr)].append(g)
+					
+		for i in range(3):
+			n = int(float(myList[i])/float(total) * mcilen)
+			for j in range(n):
+				if i == 0:
+					g = choose_and_remove(data[('NL', corr)])
+					newdata[('MCI', corr)].append(g)
+				if i == 1:
+					g = choose_and_remove(data[('AD', corr)])
+					newdata[('MCI', corr)].append(g)
+				if i == 2:
+					g = choose_and_remove(data[('MCI', corr)])
+					newdata[('MCI', corr)].append(g)
+
+	return newdata
+		
 def motifStats(data, motifSize=3, degree=10, usetotal=False):
 	"""Outputs text file with stats on the motifs in data"""
 			
@@ -262,23 +565,17 @@ if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	#motifStats(data,3,17)
-	#motifStats(data,3,10)
-	#motifStats(data,3,11)
-	#motifStats(data,3,12)
-	#motifStats(data,3,13)
-	#motifStats(data,3,14)
-	#motifStats(data,3,15)
+	#newdata = createfakeGroups(data)
+	motifStats(data,3,10)
+
 	
-	#motifStats(data,4,10)
-	
-	convertIDToGraph(14,3,True)
-	convertIDToGraph(166,3,True)
-	convertIDToGraph(140,3,True)
-	convertIDToGraph(164,3,True)
-	convertIDToGraph(6,3,True)
-	convertIDToGraph(238,3,True)
-	convertIDToGraph(78,3,True)
+#	convertIDToGraph(14,3,True)
+#	convertIDToGraph(166,3,True)
+#	convertIDToGraph(140,3,True)
+#	convertIDToGraph(164,3,True)
+#	convertIDToGraph(6,3,True)
+#	convertIDToGraph(238,3,True)
+#	convertIDToGraph(78,3,True)
 
 	
 	
