@@ -138,8 +138,7 @@ def motifOrder(data,key,epsilon,orderSize=3,motifSize=3,degree=10):
 			f.write(str(len(graph)) + '\n')
 			nx.write_edgelist(graph,f,data=False)
 		#Jenky way to use c++ motif finder in python
-		#os.system("./Kavosh "+str(motifSize))
-		subprocess.call(['Kavosh', str(motifSize)])
+		subprocess.call(['./Kavosh', str(motifSize)])
 		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
 		
 		order = []
@@ -680,6 +679,14 @@ def PDFstats(data, filename, edgeSwap=False):
 if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)	
+	
+	
+	
+	
+	
+	
+	
+	
 	
 	#PDFstats(data,"Motif_Statistics_Swap",True)
 	#motifStats(data)

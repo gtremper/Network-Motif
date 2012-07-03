@@ -2,7 +2,7 @@ import networkx as nx
 import random
 
 def randomize_graph(G, numpasses):
-	for i in xrange(numpasses*G.number_of_edges()):
+	for i in xrange(numpasses):
 		edges = set(G.edges())
 		edge1,edge2 = random.sample(edges,2)
 		a,b = edge1
