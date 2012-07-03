@@ -2,19 +2,20 @@ import networkx as nx
 import random
 
 def randomize_graph(G, numpasses):
-    for i in range(numpasses*len(G.edges())):
-        edge1 = random.choice(G.edges())
-        edge2 = random.choice(G.edges())
-        a,b = edge1
-        c,d = edge2
-        while (a, d) in G.edges() or (c, b) in G.edges():
-            edge1 = random.choice(G.edges())
-            edge2 = random.choice(G.edges())
-            a,b = edge1
-            c,d = edge2
-        G.add_edge(a, d)
-        G.add_edge(c, b)
-        G.remove_edge(a, b)
-        G.remove_edge(c, d)
-    return G
+	for i in xrange(numpasses*G.number_of_edges()):
+		edges = set(G.edges())
+		edge1 = random.choice(edges)
+		edge2 = random.choice(edges)
+		a,b = edge1
+		c,d = edge2
+		while (a, d) in edges or (c, b) in edges:
+			edge1 = random.choice(edges)
+			edge2 = random.choice(edges)
+			a,b = edge1
+			c,d = edge2
+		G.add_edge(a, d)
+		G.add_edge(c, b)
+		G.remove_edge(a, b)
+		G.remove_edge(c, d)
+	return G
 

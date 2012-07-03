@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
+#import subprocess
 import cPickle as pickle
 import scipy.stats as stats
 import graph_helper as gh
@@ -11,7 +12,7 @@ import random
 from collections import defaultdict
 from math import floor
 
-USECACHE = True
+USECACHE = False
 
 def outputGraph(graph,name="OUTPUT.txt"):
 	"""Output a textfile edgelist of graph"""
@@ -25,7 +26,7 @@ def findSingleMotif(G,motifSize):
 	outputGraph(G)
 	os.system("./Kavosh -i result/OUTPUT.txt -s "+str(motifSize))
 	data = np.loadtxt("result/MotifCount.txt")
-	return data	
+	return data 
 
 def convertIDToGraph(id,motifSize,save=False):
 	"""Plot graph with id and motifSize"""
@@ -47,6 +48,7 @@ def convertIDToGraph(id,motifSize,save=False):
 
 def findMotifs(data,key,motifSize=3,degree=10,randomize=False):
 	"""Main finding motifs routine"""
+	
 	usetotal = False
 	
 	#Check cache
@@ -70,9 +72,9 @@ def findMotifs(data,key,motifSize=3,degree=10,randomize=False):
 	rejected = 0
 	for index,G in enumerate(graphs):
 		#Cull bad graphs
-		#if np.count_nonzero(G)<len(G)*degree:
-		#	rejected += 1
-		#	continue
+		if np.count_nonzero(G)<len(G)*degree:
+			rejected += 1
+			continue
 			
 		#calculate threshold
 		sortedWeights = np.sort(G,axis=None)
@@ -113,11 +115,11 @@ def findMotifs(data,key,motifSize=3,degree=10,randomize=False):
 		
 	return motifs
 
-def motifOrder(data,key,num,orderSize=3,motifSize=3,degree=10):
+def motifOrder(data,key,epsilon,orderSize=3,motifSize=3,degree=10):
 	"""Sorts graphs into bins based on motif frequency ordering"""	
 	if key == "rand":
 		graphs = []
-		for i in xrange(num):	
+		for i in xrange(100):	
 			x = np.random.rand(88,88)
 			x -= np.diag(np.diag(x))
 			graphs.append(x)
@@ -143,9 +145,20 @@ def motifOrder(data,key,num,orderSize=3,motifSize=3,degree=10):
 		for iD,total,percent in data:
 			order.append((iD,total))
 		keys = sorted(order,key=lambda x:-x[1])
-		keys = [int(k[0]) for k in keys]
-		pat = tuple(keys[:orderSize])
-		pattern[pat] += 1/float(len(graphs))
+		
+		index = 0
+		groupedKeys = []
+		while index < orderSize:
+			root = keys[index][1]
+			element = [keys[index][0]]
+			index += 1
+			while keys[index][1]*epsilon > root and index < orderSize:
+				element.append(keys[index][0])
+				index += 1
+			element.sort()
+			groupedKeys.append(tuple(element))
+			
+		pattern[tuple(groupedKeys)] += 1/float(len(graphs))
 		
 		
 	total = sorted(pattern.items(), key = lambda x: -x[1])
@@ -154,6 +167,7 @@ def motifOrder(data,key,num,orderSize=3,motifSize=3,degree=10):
 		print str(key)+": " + str(value)
 		
 def genRandomGraphs(graphs, degree, num):
+	"""Generates random adjacency matricies"""
 	mats = []
 	for i in xrange(num):	
 		x = np.random.rand(88,88)
@@ -278,7 +292,7 @@ def motifStatsSwap(data, motifSize=3, degree=10, usetotal=False):
 					star = ""
 				line = star+"{0:>"+str(10-len(star))+"}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}{6:>15.3}{7:>15.3}{8:>15.3}{9:>15.3}\n"
 				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
-			f.write("\n\n")	
+			f.write("\n\n") 
 
 def motifStatsShuffle(data, motifSize=3, degree=10, usetotal=False):
 	"""Outputs text file with stats on the motifs in data"""
@@ -335,7 +349,7 @@ def motifStatsShuffle(data, motifSize=3, degree=10, usetotal=False):
 					star = ""
 				line = star+"{0:>"+str(10-len(star))+"}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}{6:>15.3}{7:>15.3}{8:>15.3}{9:>15.3}\n"
 				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
-			f.write("\n\n")	
+			f.write("\n\n") 
 			
 def motifStats3(data, motifSize=3, degree=10, usetotal=False):
 	"""Outputs text file with stats on the motifs in data"""
@@ -392,19 +406,20 @@ def motifStats3(data, motifSize=3, degree=10, usetotal=False):
 					star = ""
 				line = star+"{0:>"+str(10-len(star))+"}{1:>15.3}{2:>15.3}{3:>15.3}{4:>15.3}{5:>15.3}{6:>15.3}{7:>15.3}{8:>15.3}{9:>15.3}\n"
 				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
-			f.write("\n\n")	
+			f.write("\n\n") 
 			
 def choose_and_remove( items ):
-    # pick an item index
-    if items:
-        index = random.randrange( len(items) )
-        return items.pop(index)
-    # nothing left!
-    return None
+	"""Select a random element from items and return it"""
+	# pick an item index
+	if items:
+		index = random.randrange( len(items) )
+		return items.pop(index)
+	# nothing left!
+	return None
 			
 def createfakeGroups(data):
 	newdata ={}
-	for corr in  ('corr','lcorr','lacorr'):
+	for corr in	 ('corr','lcorr','lacorr'):
 		newdata[('NL', corr)] = []
 		newdata[('AD', corr)] = []
 		newdata[('MCI', corr)] = []
@@ -415,9 +430,9 @@ def createfakeGroups(data):
 		total = adlen + nllen + mcilen
 		
 		myList = [nllen, adlen, mcilen]
-		for i in range(3):
+		for i in xrange(3):
 			n = int(float(myList[i])/float(total) * nllen)
-			for j in range(n):
+			for j in xrange(n):
 				if i == 0:
 					g = choose_and_remove(data[('NL', corr)])
 					newdata[('NL', corr)].append(g)
@@ -428,9 +443,9 @@ def createfakeGroups(data):
 					g = choose_and_remove(data[('MCI', corr)])
 					newdata[('NL', corr)].append(g)
 		
-		for i in range(3):
+		for i in xrange(3):
 			n = int(float(myList[i])/float(total) * adlen)
-			for j in range(n):
+			for j in xrange(n):
 				if i == 0:
 					g = choose_and_remove(data[('NL', corr)])
 					newdata[('AD', corr)].append(g)
@@ -441,9 +456,9 @@ def createfakeGroups(data):
 					g = choose_and_remove(data[('MCI', corr)])
 					newdata[('AD', corr)].append(g)
 					
-		for i in range(3):
+		for i in xrange(3):
 			n = int(float(myList[i])/float(total) * mcilen)
-			for j in range(n):
+			for j in xrange(n):
 				if i == 0:
 					g = choose_and_remove(data[('NL', corr)])
 					newdata[('MCI', corr)].append(g)
@@ -513,6 +528,7 @@ def motifStats(data, motifSize=3, degree=10, usetotal=False):
 			f.write("\n\n")
 
 def genRandMats(num):
+	"""Generate random adjacency matricies"""
 	mats = []
 	for i in xrange(num):
 		x = np.random.rand(88,88)
@@ -572,11 +588,12 @@ def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 		plt.savefig(header+corr+"_D-"+str(degree)+"_S-"+str(motifSize))
 		plt.clf()
 		
-def PDFstats(data, filename):
-	
-	motifsRAND = findMotifs(data,'rand')
-	
+def PDFstats(data, filename, edgeSwap=False):
+	"""Output a latex pdf of motif stats"""
 	filename = "result/" + filename + ".tex"
+	
+	if not edgeSwap:
+		motifsNLRAND = motifsMCIRAND = motifsADRAND = findMotifs(data,"rand")
 	
 	with open(filename,'wb') as f:
 		f.write(
@@ -596,7 +613,11 @@ def PDFstats(data, filename):
 			motifsNL = findMotifs(data, ('NL',corr))
 			motifsMCI = findMotifs(data, ('MCI',corr))
 			motifsAD = findMotifs(data, ('AD',corr))
-			
+			if edgeSwap:
+				motifsNLRAND = findMotifs(data, ('NL',corr), randomize=True)
+				motifsMCIRAND = findMotifs(data, ('MCI',corr), randomize=True)
+				motifsADRAND = findMotifs(data, ('AD',corr), randomize=True)
+				
 			allMotifs = list( set(motifsNL.keys())
 							& set(motifsAD.keys())
 							& set(motifsMCI.keys()) )
@@ -606,9 +627,9 @@ def PDFstats(data, filename):
 				c1 = stats.ttest_ind(motifsMCI[key], motifsNL[key])
 				c2 = stats.ttest_ind(motifsAD[key], motifsNL[key])
 				c3 = stats.ttest_ind(motifsMCI[key], motifsAD[key])
-				c4 = stats.ttest_ind(motifsNL[key], motifsRAND[key])
-				c5 = stats.ttest_ind(motifsMCI[key], motifsRAND[key])
-				c6 = stats.ttest_ind(motifsAD[key], motifsRAND[key])
+				c4 = stats.ttest_ind(motifsNL[key], motifsNLRAND[key])
+				c5 = stats.ttest_ind(motifsMCI[key], motifsMCIRAND[key])
+				c6 = stats.ttest_ind(motifsAD[key], motifsADRAND[key])
 				motifStats.append((key,c1,c2,c3,c4,c5,c6))
 			
 			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
@@ -616,14 +637,14 @@ def PDFstats(data, filename):
 			f.write(
 			"""
 			\\begin{table}[t]
-			""" + "\\caption{Motif T-test results from "+corr+" data}" +
+			""" + "\\caption{Motif T-test results from "+corr+" data with using random matrices}" +
 			"""
 			\\centering
 			\\vspace{2pt}
 			\\begin{tabular}{|c|c|c|c|c|c|c|}
 			\\hline
 			\\rowcolor[gray]{0.85} 
-			Key	& MCI to Norm & AD to Norm & MCI to AD & Norm to Rand & MCI to Rand & AD to Rand \\\\ \\hline
+			Key & MCI to Norm & AD to Norm & MCI to AD & Norm to Rand & MCI to Rand & AD to Rand \\\\ \\hline
 			""")
 			for stat in motifStats:
 				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
@@ -652,31 +673,32 @@ def PDFstats(data, filename):
 		f.write("\\end{document}\n")
 	
 	os.system("pdflatex -output-directory result " + filename)
-	os.system("rm result/*.tex result/*.log result/*.aux")
+	os.system("rm result/*.log result/*.aux")
+	#subprocess.call(['pdflatex','-output-directory result','filename'])
 
 if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	PDFstats(data,"Motif_Statistics")
+	#PDFstats(data,"Motif_Statistics_Mats",False)
 	#motifStats(data)
 	
-	"""
+	
 	print 'Normal'
-	motifOrder(data,('NL','corr'),3,3,10)
+	motifOrder(data,('NL','corr'),1.05)
 	print 'MCI'
-	motifOrder(data,('MCI','corr'),3,3,10)
+	motifOrder(data,('MCI','corr'),1.05)
 	print 'AD'
-	motifOrder(data,('AD','corr'),3,3,10)
+	motifOrder(data,('AD','corr'),1.05)
 	print 'Random'
-	motifOrder(data,"rand",3,3,10)
-	"""
+	motifOrder(data,"rand",1.05)
+	
 		
 	
 
 	
 	
-"""	
+""" 
 def plotThresholds():
 	f = open("aznorbert_corrsd.pkl","rb")
 	DATA = pickle.load(f)
