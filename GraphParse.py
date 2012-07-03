@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
-#import subprocess
+import subprocess
 import cPickle as pickle
 import scipy.stats as stats
 import graph_helper as gh
@@ -138,7 +138,8 @@ def motifOrder(data,key,epsilon,orderSize=3,motifSize=3,degree=10):
 			f.write(str(len(graph)) + '\n')
 			nx.write_edgelist(graph,f,data=False)
 		#Jenky way to use c++ motif finder in python
-		os.system("./Kavosh "+str(motifSize))
+		#os.system("./Kavosh "+str(motifSize))
+		subprocess.call(['Kavosh', str(motifSize)])
 		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
 		
 		order = []
@@ -678,50 +679,17 @@ def PDFstats(data, filename, edgeSwap=False):
 
 if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
-		data = pickle.load(f)
+		data = pickle.load(f)	
 	
-	#PDFstats(data,"Motif_Statistics_Mats",False)
+	#PDFstats(data,"Motif_Statistics_Swap",True)
 	#motifStats(data)
-	
 	
 	print 'Normal'
 	motifOrder(data,('NL','corr'),1.05)
-	print 'MCI'
-	motifOrder(data,('MCI','corr'),1.05)
-	print 'AD'
-	motifOrder(data,('AD','corr'),1.05)
-	print 'Random'
-	motifOrder(data,"rand",1.05)
-	
-		
-	
-
-	
-	
-""" 
-def plotThresholds():
-	f = open("aznorbert_corrsd.pkl","rb")
-	DATA = pickle.load(f)
-	f.close()
-	
-	for name,graphs in DATA.iteritems():
-		thresholds = np.linspace(.9999,0.9,11)
-		totalAveDegree = []
-		print str(name)
-		for thresh in thresholds:
-			minDeg = 999999
-			array = np.zeros(len(graphs))
-			counter = 0
-			for graph in graphs:
-				ave = aveDegree(nx.DiGraph(graph>thresh))
-				array[counter]=ave
-				counter+=1
-			totalAveDegree.append(array.mean())
-		plt.plot(thresholds,totalAveDegree)
-		plt.savefig(str(name))
-"""
-	
-
-	
-	
+	#print 'MCI'
+	#motifOrder(data,('MCI','corr'),1.05)
+	#print 'AD'
+	#motifOrder(data,('AD','corr'),1.05)
+	#print 'Random'
+	#motifOrder(data,"rand",1.05)
 	
