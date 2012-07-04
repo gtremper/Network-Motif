@@ -55,7 +55,7 @@ def createCorrMatrixes(measuredict):
                 if r_e[i] == -1.0 or r_f[j] == -1.0:
                     corrmat[i][j] = 0
                 else:
-                    corrmat[i][j] = 1 - math.pow((r_e[i] - r_f[j]), 2)/100
+                    corrmat[i][j] = 1 - min(math.pow((r_e[i] - r_f[j]), 2)/100, 1)
                     if corrmat[i][j] < 0:
                         print r_e[i], r_f[j]
                         
