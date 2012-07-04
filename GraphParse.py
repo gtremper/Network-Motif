@@ -9,7 +9,7 @@ import scipy.stats as stats
 import graph_helper as gh
 import random
 from collections import defaultdict
-from math import floor
+from copy import deepcopy
 
 USECACHE = True
 
@@ -200,7 +200,7 @@ def findMotifs2(data,key,motifSize=3,degree=10,usetotal=False):
 		#Output graph to txt file
 		graph = nx.DiGraph(G>threshold)
 		graph = nx.convert_node_labels_to_integers(graph,1)
-		graph = gh.randomize_graph(graph, 3)
+		graph = gh.randomize_graph(graph, 4)
 		with open('result/OUTPUT.txt','wb') as f:
 			f.write(str(len(graph)) + '\n')
 			nx.write_edgelist(graph,f,data=False)
@@ -272,7 +272,7 @@ def motifStatsSwap(data, motifSize=3, degree=10, usetotal=False):
 				adRVar = motifsADR[key].std()
 				if probMCI<0.01 or probAD<0.01 or probNL<0.01:
 					star = "**"
-				elif probMCI<0.1 or probAD<0.1 or probNL<0.01:
+				elif probMCI<0.1 or probAD<0.1 or probNL<0.1:
 					star = "*"
 				else:
 					star = ""
@@ -280,7 +280,7 @@ def motifStatsSwap(data, motifSize=3, degree=10, usetotal=False):
 				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
 			f.write("\n\n")	
 
-def motifStatsShuffle(data, motifSize=3, degree=10, usetotal=False):
+def motifStatsRandMarix(data, motifSize=3, degree=10, usetotal=False):
 	"""Outputs text file with stats on the motifs in data"""
 			
 	filename = "result/t_test_Deg-{0}_Size-{1}.txt".format(degree,motifSize)
@@ -290,9 +290,9 @@ def motifStatsShuffle(data, motifSize=3, degree=10, usetotal=False):
 			title = "P-values for "+corr+" data set compared to random generated graphs\n"
 			f.write(title)
 			
-			data[('MCIR', corr)] = genRandomGraphs(data[('MCI', corr)], degree, 119) 
-			data[('ADR', corr)] = genRandomGraphs(data[('AD', corr)], degree, 39) 
-			data[('NLR', corr)] = genRandomGraphs(data[('NL', corr)], degree, 108)
+			data[('MCIR', corr)] = genRandomGraphs(data[('MCI', corr)], degree, len(data[('MCI', corr)])) 
+			data[('ADR', corr)] = genRandomGraphs(data[('AD', corr)], degree, len(data[('AD', corr)])) 
+			data[('NLR', corr)] = genRandomGraphs(data[('NL', corr)], degree, len(data[('NL', corr)]))
 			 
 			motifsNL=findMotifs(data,('NL',corr), motifSize, degree, usetotal)
 			motifsMCI=findMotifs(data,('MCI',corr), motifSize, degree, usetotal)
@@ -337,21 +337,20 @@ def motifStatsShuffle(data, motifSize=3, degree=10, usetotal=False):
 				f.write(line.format(str(int(key)), probNL, probMCI, probAD,normRMean,mciRMean,adRMean,normRVar,mciRVar,adRVar))
 			f.write("\n\n")	
 			
-			
 def choose_and_remove( items ):
+#	pass
     # pick an item index
     if items:
         index = random.randrange( len(items) )
         return items.pop(index)
-    # nothing left!
     return None
 			
 def createfakeGroups(data):
-	newdata ={}
+	newdata = deepcopy(data)
 	for corr in  ('corr','lcorr','lacorr'):
-		newdata[('NL', corr)] = []
-		newdata[('AD', corr)] = []
-		newdata[('MCI', corr)] = []
+		newdata[('NLR', corr)] = []
+		newdata[('ADR', corr)] = []
+		newdata[('MCIR', corr)] = []
 		
 		adlen = len(data[('AD', corr)]) 
 		nllen = len(data[('NL', corr)])
@@ -364,40 +363,53 @@ def createfakeGroups(data):
 			for j in range(n):
 				if i == 0:
 					g = choose_and_remove(data[('NL', corr)])
-					newdata[('NL', corr)].append(g)
+					newdata[('NLR', corr)].append(g)
 				if i == 1:
 					g = choose_and_remove(data[('AD', corr)])
-					newdata[('NL', corr)].append(g)
+					newdata[('NLR', corr)].append(g)
 				if i == 2:
 					g = choose_and_remove(data[('MCI', corr)])
-					newdata[('NL', corr)].append(g)
+					newdata[('NLR', corr)].append(g)
 		
 		for i in range(3):
 			n = int(float(myList[i])/float(total) * adlen)
 			for j in range(n):
 				if i == 0:
 					g = choose_and_remove(data[('NL', corr)])
-					newdata[('AD', corr)].append(g)
+					newdata[('ADR', corr)].append(g)
 				if i == 1:
 					g = choose_and_remove(data[('AD', corr)])
-					newdata[('AD', corr)].append(g)
+					newdata[('ADR', corr)].append(g)
 				if i == 2:
 					g = choose_and_remove(data[('MCI', corr)])
-					newdata[('AD', corr)].append(g)
+					newdata[('ADR', corr)].append(g)
 					
 		for i in range(3):
 			n = int(float(myList[i])/float(total) * mcilen)
 			for j in range(n):
 				if i == 0:
 					g = choose_and_remove(data[('NL', corr)])
-					newdata[('MCI', corr)].append(g)
+					newdata[('MCIR', corr)].append(g)
 				if i == 1:
 					g = choose_and_remove(data[('AD', corr)])
-					newdata[('MCI', corr)].append(g)
+					newdata[('MCIR', corr)].append(g)
 				if i == 2:
 					g = choose_and_remove(data[('MCI', corr)])
-					newdata[('MCI', corr)].append(g)
-
+					newdata[('MCIR', corr)].append(g)
+		
+		leftovers = data[('NL', corr)] + data[('AD', corr)] + data[('MCI', corr)]
+		while len(newdata['NLR', corr]) < nllen:
+			g = choose_and_remove(leftovers)
+			newdata[('NLR', corr)].append(g)
+			
+		while len(newdata['ADR', corr]) < adlen:
+			g = choose_and_remove(leftovers)
+			newdata[('ADR', corr)].append(g)
+			
+		while len(newdata['MCIR', corr]) < mcilen:
+			g = choose_and_remove(leftovers)
+			newdata[('MCIR', corr)].append(g)
+			
 	return newdata
 		
 def motifStats(data, motifSize=3, degree=10, usetotal=False):
@@ -598,12 +610,97 @@ def PDFstats(data, filename):
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.tex result/*.log result/*.aux")
 
+def PDFstatsShuffle(data, filename):
+	
+	data=createfakeGroups(data)
+	
+	
+	filename = "result/" + filename + ".tex"
+	
+	with open(filename,'wb') as f:
+		f.write(
+		"""
+		\\documentclass{article}
+		\\usepackage{amsmath,graphicx,fancyhdr,colortbl}
+		\\definecolor{yellow}{RGB}{255,255,70}
+		\\definecolor{orange}{RGB}{255,165,70}
+		\\definecolor{red}{RGB}{255,70,70}
+		\\title{Motif Data}
+		\\author{Graham Tremper}
+		\\date{}
+		\\fancyhead{}
+		\\begin{document}
+		""")
+		for corr in ['corr', 'lcorr', 'lacorr']:
+			motifsNLRAND = findMotifs(data,('NLR', corr))
+			motifsADRAND = findMotifs(data, ('ADR', corr))
+			motifsMCIRAND = findMotifs(data, ('MCIR', corr))
+			motifsNL = findMotifs(data, ('NL',corr))
+			motifsMCI = findMotifs(data, ('MCI',corr))
+			motifsAD = findMotifs(data, ('AD',corr))
+			
+			allMotifs = list( set(motifsNL.keys())
+							& set(motifsAD.keys())
+							& set(motifsMCI.keys()) )
+							
+			motifStats = []
+			for key in allMotifs:
+				c1 = stats.ttest_ind(motifsMCI[key], motifsNL[key])
+				c2 = stats.ttest_ind(motifsAD[key], motifsNL[key])
+				c3 = stats.ttest_ind(motifsMCI[key], motifsAD[key])
+				c4 = stats.ttest_ind(motifsNL[key], motifsNLRAND[key])
+				c5 = stats.ttest_ind(motifsMCI[key], motifsMCIRAND[key])
+				c6 = stats.ttest_ind(motifsAD[key], motifsADRAND[key])
+				motifStats.append((key,c1,c2,c3,c4,c5,c6))
+			
+			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
+						
+			f.write(
+			"""
+			\\begin{table}[t]
+			""" + "\\caption{Motif T-test results from "+corr+" data}" +
+			"""
+			\\centering
+			\\vspace{2pt}
+			\\begin{tabular}{|c|c|c|c|c|c|c|}
+			\\hline
+			\\rowcolor[gray]{0.85} 
+			Key	& MCI to Norm & AD to Norm & MCI to AD & Norm to Rand & MCI to Rand & AD to Rand \\\\ \\hline
+			""")
+			for stat in motifStats:
+				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
+				for sign,col in stat[1:]:
+					cell = " & {0:.3}".format(col)
+					if sign > 0:
+						cell += '(+)'
+					else:
+						cell += '(-)'
+					
+					if col <= 0.01:
+						cell += " \\cellcolor{red} "
+					elif col <= 0.05:
+						cell += " \\cellcolor{orange}"
+					elif col <= 0.1:
+						cell += " \\cellcolor{yellow}"
+					f.write(cell)
+				f.write("\\\\ \\hline\n")
+				
+			f.write(
+			"""
+			\\end{tabular}
+			\\end{table}
+			""")
+		
+		f.write("\\end{document}\n")
+	
+	os.system("pdflatex -output-directory result " + filename)
+	os.system("rm result/*.tex result/*.log result/*.aux")
 if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	#PDFstats(data,"Motif_Statistics")
-	motifStats2(data)
+	PDFstatsShuffle(data,"Motif_Statistics")
+	#motifStatsSwap(data)
 	
 	"""
 	print 'Normal'
