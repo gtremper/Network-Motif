@@ -56,7 +56,9 @@ def createCorrMatrixes(measuredict):
                     corrmat[i][j] = 0
                 else:
                     corrmat[i][j] = 1 - math.pow((r_e[i] - r_f[j]), 2)/100
-        
+                    if corrmat[i][j] < 0:
+                        print r_e[i], r_f[j]
+                        
         lcorrboolean = np.zeros(shape=(graphsize, graphsize))
         
         for i in range(graphsize):

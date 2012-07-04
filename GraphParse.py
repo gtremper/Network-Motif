@@ -555,7 +555,7 @@ def PDFstats(data, filename, edgeSwap=False):
 		f.write(
 		"""
 		\\documentclass{article}
-		\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl}
+		\\usepackage{amsmath,graphicx,fancyhdr,colortbl}
 		\\definecolor{yellow}{RGB}{255,255,70}
 		\\definecolor{orange}{RGB}{255,165,70}
 		\\definecolor{red}{RGB}{255,70,70}
@@ -653,7 +653,7 @@ def PDFstatsShuffle(data, filename):
 		\\fancyhead{}
 		\\begin{document}
 		""")
-		for corr in ['corr', 'lcorr', 'lacorr']:
+		for corr in ['corr']:
 			motifsNLRAND = findMotifs(data,('NLR', corr))
 			motifsADRAND = findMotifs(data, ('ADR', corr))
 			motifsMCIRAND = findMotifs(data, ('MCIR', corr))
@@ -718,16 +718,13 @@ def PDFstatsShuffle(data, filename):
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.tex result/*.log result/*.aux")
 if __name__ == '__main__':
-	with open("aznorbert_corrsd.pkl","rb") as f:
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)	
 	
-	PDFstatsShuffle(data,"Motif_Statistics")
+	#PDFstatsShuffle(data,"Motif_Statistics")
 	#motifStatsSwap(data)
-	#PDFstats(data,"Motif_Statistics_Swap",True)
+	PDFstats(data,"Motif_Statistics_Swap",True)
 	#motifStats(data)
-	
-	print 'Normal'
-	motifOrder(data,('NL','corr'),1.05)
 	#print 'MCI'
 	#motifOrder(data,('MCI','corr'),1.05)
 	#print 'AD'
