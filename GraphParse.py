@@ -88,7 +88,7 @@ def findMotifs(data,key,motifSize=3,degree=10,randomize=False):
 		graph = nx.DiGraph(G>threshold)
 		graph = nx.convert_node_labels_to_integers(graph,1)
 		if randomize:
-			graph = gh.randomize_graph(graph, 3)
+			graph = gh.randomize_graph(graph, 2000)
 		with open('result/OUTPUT.txt','wb') as f:
 			f.write(str(len(graph)) + '\n')
 			nx.write_edgelist(graph,f,data=False)
@@ -115,7 +115,7 @@ def findMotifs(data,key,motifSize=3,degree=10,randomize=False):
 		
 	return motifs
 
-def motifOrder(data,key,epsilon,orderSize=3,motifSize=3,degree=10):
+def motifOrder(data,key,epsilon,orderSize=3,motifSize=3,degree=10,swap=False):
 	"""Sorts graphs into bins based on motif frequency ordering"""	
 	if key == "rand":
 		graphs = []
@@ -134,6 +134,8 @@ def motifOrder(data,key,epsilon,orderSize=3,motifSize=3,degree=10):
 		#Output graph to txt file
 		graph = nx.DiGraph(G>threshold)
 		graph = nx.convert_node_labels_to_integers(graph,1)
+		if swap:
+			graph = gh.randomize_graph(graph, 2000)
 		with open('result/OUTPUT.txt','wb') as f:
 			f.write(str(len(graph)) + '\n')
 			nx.write_edgelist(graph,f,data=False)
@@ -143,28 +145,26 @@ def motifOrder(data,key,epsilon,orderSize=3,motifSize=3,degree=10):
 		
 		order = []
 		for iD,total,percent in data:
-			order.append((iD,total))
+			order.append((int(iD),total))
 		keys = sorted(order,key=lambda x:-x[1])
 		
 		index = 0
 		groupedKeys = []
-		while index < orderSize:
+		size = min(orderSize,len(keys))
+		while index < size:
 			root = keys[index][1]
 			element = [keys[index][0]]
 			index += 1
-			while keys[index][1]*epsilon > root and index < orderSize:
+			while index < size and keys[index][1]*epsilon > root:
 				element.append(keys[index][0])
 				index += 1
 			element.sort()
 			groupedKeys.append(tuple(element))
 			
-		pattern[tuple(groupedKeys)] += 1/float(len(graphs))
-		
-		
-	total = sorted(pattern.items(), key = lambda x: -x[1])
+		pattern[tuple(groupedKeys)] += 100/float(len(graphs))
 	
-	for key,value in total:
-		print str(key)+": " + str(value)
+	return pattern		
+	#total = sorted(pattern.items(), key = lambda x: -x[1])
 		
 def genRandomGraphs(graphs, degree, num):
 	"""Generates random adjacency matricies"""
@@ -597,18 +597,17 @@ def PDFstats(data, filename, edgeSwap=False):
 	
 	with open(filename,'wb') as f:
 		f.write(
-		"""
-		\\documentclass{article}
-		\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl}
-		\\definecolor{yellow}{RGB}{255,255,70}
-		\\definecolor{orange}{RGB}{255,165,70}
-		\\definecolor{red}{RGB}{255,70,70}
-		\\title{Motif Data}
-		\\author{Graham Tremper}
-		\\date{}
-		\\fancyhead{}
-		\\begin{document}
-		""")
+		"\\documentclass{article}\n"
+		"\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl}\n"
+		"\\definecolor{yellow}{RGB}{255,255,70}\n"
+		"\\definecolor{orange}{RGB}{255,165,70}\n"
+		"\\definecolor{red}{RGB}{255,70,70}\n"
+		"\\title{Motif Data}\n"
+		"\\author{Graham Tremper}\n"
+		"\\date{}\n"
+		"\\fancyhead{}\n"
+		"\\begin{document}\n"
+		)
 		for corr in ('corr','lcorr','lacorr'):
 			motifsNL = findMotifs(data, ('NL',corr))
 			motifsMCI = findMotifs(data, ('MCI',corr))
@@ -635,17 +634,15 @@ def PDFstats(data, filename, edgeSwap=False):
 			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
 						
 			f.write(
-			"""
-			\\begin{table}[t]
-			""" + "\\caption{Motif T-test results from "+corr+" data with using random matrices}" +
-			"""
-			\\centering
-			\\vspace{2pt}
-			\\begin{tabular}{|c|c|c|c|c|c|c|}
-			\\hline
-			\\rowcolor[gray]{0.85} 
-			Key & MCI to Norm & AD to Norm & MCI to AD & Norm to Rand & MCI to Rand & AD to Rand \\\\ \\hline
-			""")
+			"\\begin{table}[t]\n"
+			"\\caption{Motif T-test results from "+corr+" data with using random matrices}\n"
+			"\\centering\n"
+			"\\vspace{2pt}\n"
+			"\\begin{tabular}{|c|c|c|c|c|c|c|}\n"
+			"\\hline\n"
+			"\\rowcolor[gray]{0.85}\n"
+			"Key & MCI to Norm & AD to Norm & MCI to AD & Norm to Rand & MCI to Rand & AD to Rand \\\\ \\hline\n"
+			)
 			for stat in motifStats:
 				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
 				for sign,col in stat[1:]:
@@ -665,34 +662,114 @@ def PDFstats(data, filename, edgeSwap=False):
 				f.write("\\\\ \\hline\n")
 				
 			f.write(
-			"""
-			\\end{tabular}
-			\\end{table}
-			""")
+			"\\end{tabular}\n"
+			"\\end{table}\n"
+			)
 		
 		f.write("\\end{document}\n")
 	
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.log result/*.aux")
-	#subprocess.call(['pdflatex','-output-directory result','filename'])
+
+def tupToStr(tup):
+	string = ""
+	for ele in tup:
+		if len(ele)==1:
+			string += str(ele[0])+", "
+		else:
+			string += str(ele)+", "
+	return string[:-2]
+				
+	
+def PDFOrder(data, filename='ORDER',epsilon=1.05):
+	"""Output a latex pdf of motif orderings"""
+	filename = "result/" + filename + ".tex"
+	
+	with open(filename,'wb') as f:
+		f.write(
+		"\\documentclass{article}\n"
+		"\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl}\n"
+		"\\definecolor{top5}{RGB}{255,255,70}\n"
+		"\\definecolor{top4}{RGB}{255,200,70}\n"
+		"\\definecolor{top3}{RGB}{255,150,70}\n"
+		"\\definecolor{top2}{RGB}{255,100,70}\n"
+		"\\definecolor{top1}{RGB}{255,50,70}\n"
+		"\\definecolor{top0}{RGB}{255,0,70}\n"
+		"\\title{Motif Data}\n"
+		"\\author{Graham Tremper}\n"
+		"\\date{}\n"
+		"\\fancyhead{}\n"
+		"\\begin{document}\n"
+		)
+		for corr in ('corr','lcorr','lacorr'):
+			print "starting "+str(corr)
+			orderNorm = motifOrder(data, ('NL',corr), epsilon)
+			orderMCI = motifOrder(data, ('MCI',corr), epsilon)
+			orderAD = motifOrder(data, ('AD',corr), epsilon)
+			
+			keys = list(set(orderNorm.keys()) | set(orderMCI.keys()) | set(orderAD.keys()))
+			keys.sort(key = lambda x: -orderNorm[x])
+			
+			topNorm = sorted(keys, key = lambda x: -orderNorm[x])[:6]
+			topMCI = sorted(keys, key = lambda x: -orderMCI[x])[:6]
+			topAD = sorted(keys, key = lambda x: -orderAD[x])[:6]			
+			
+			f.write(
+			"\\begin{table}[t]\n"
+			"\\caption{Motif orderings from "+str(corr)+" data with epsilon "+str(epsilon)+"}\n"
+			"\\centering\n"
+			"\\vspace{2pt}\n"
+			"\\begin{tabular}{|c|c|c|c|}\n"
+			"\\hline\n"
+			"\\rowcolor[gray]{0.85}\n"
+			"Order & Norm Percent & MCI Percent & AD Percent \\\\ \\hline\n"
+			)
+			for key in keys:
+				f.write( tupToStr(key) + " \\cellcolor[gray]{0.95} ")
+				
+				line = " & {0:.3}".format(orderNorm[key])
+				if key in topNorm:
+					line += ' \\cellcolor{top'+str(topNorm.index(key))+'}'
+					
+				line += " & {0:.3}".format(orderMCI[key])
+				if key in topMCI:
+					line += ' \\cellcolor{top'+str(topMCI.index(key))+'}'
+					
+				line += " & {0:.3}".format(orderAD[key])
+				if key in topAD:
+					line += ' \\cellcolor{top'+str(topAD.index(key))+'}'
+						
+				f.write(line + " \\\\ \\hline\n")
+				
+			f.write(
+			"\\end{tabular}\n"
+			"\\end{table}\n"
+			)
+		
+		f.write("\\end{document}\n")
+	
+	os.system("pdflatex -output-directory result " + filename)
+	os.system("rm result/*.log result/*.aux")
+
 
 if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)	
 	
+	#PDFOrder(data,"AllOrder",1.05)
 	
+	for G in data[('NL','lacorr')]:
+		sortedWeights = np.sort(G,axis=None)
+		threshold = sortedWeights[-len(G)*10-1]
+
+		graph = nx.DiGraph(G>threshold)
+		graph = gh.randomize_graph(graph, 1000)
 	
-	
-	
-	
-	
-	
-	
-	#PDFstats(data,"Motif_Statistics_Swap",True)
+	#PDFstats(data,"Motif_Statistics_Mats",False)
 	#motifStats(data)
 	
-	print 'Normal'
-	motifOrder(data,('NL','corr'),1.05)
+	#print 'Normal'
+	#motifOrder(data,('NL','corr'),1.05)
 	#print 'MCI'
 	#motifOrder(data,('MCI','corr'),1.05)
 	#print 'AD'
