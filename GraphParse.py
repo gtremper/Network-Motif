@@ -797,16 +797,15 @@ if __name__ == '__main__':
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)	
 	
-	PDFOrder(data,"AllOrder",1.05)
+	#PDFOrder(data,"AllOrder",1.05)
 	
-	"""
-	for G in data[('NL','lacorr')]:
+	for i,G in enumerate(data[('NL','corr')]):
+		print i
 		sortedWeights = np.sort(G,axis=None)
 		threshold = sortedWeights[-len(G)*10-1]
 
 		graph = nx.DiGraph(G>threshold)
 		graph = gh.randomize_graph(graph, 1000)
-	"""
 	
 	#PDFstats(data,"Motif_Statistics_Mats",False)
 	#motifStats(data)
