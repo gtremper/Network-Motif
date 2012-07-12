@@ -5,20 +5,16 @@ Motif.py
 
 Created by Graham Tremper on 2012-07-10.
 """
-
-import math
+import sys
+import os
+import random
+import cPickle as pickle
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
-import os
-import subprocess
-import cPickle as pickle
 import scipy.stats as stats
 import graph_helper as gh
-import random
 from collections import defaultdict
-from copy import deepcopy
 
 USECACHE = False
 
@@ -92,7 +88,7 @@ def findMotifs(data,key,motifSize=3,degree=10,swap=False):
 			nx.write_edgelist(graph,f,data=False)
 		
 		#Jenky way to use c++ motif finder in python
-		subprocess.call(['./Kavosh', str(motifSize)])
+		os.system("./Kavosh "+str(motifSize))
 		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
 		for iD,total,percent in data:
 			motifs[int(iD)].append(percent)
@@ -237,27 +233,57 @@ def PDFstats(data, filename, edgeSwap=False):
 
 		f.write("\\end{document}\n")
 
-	subprocess.call(['pdflatex','-output-directory result',filename])
-	subprocess.call(['rm','result/*.log','result/*.aux"'])
-	#os.system("pdflatex -output-directory result " + filename)
-	#os.system("rm result/*.log result/*.aux")
+	os.system("pdflatex -output-directory result " + filename)
+	os.system("rm result/*.log result/*.aux")
 
 
 def main():
 	with open("aznorbert_corrsd.pkl","rb") as f:
 		data = pickle.load(f)	
-	"""
-	for i,G in enumerate(data[('NL','corr')]):
-		print i
-		sortedWeights = np.sort(G,axis=None)
-		threshold = sortedWeights[-len(G)*10-1]
-
-		graph = nx.DiGraph(G>threshold)
-		graph = gh.randomize_graph(graph, 1000)
-	"""
 	
-	PDFstats(data,"Motif_Statistics_Mats",False)
+	
+	for key, graphs in data.iteritems():
+		print key
+		maxes = []
+		swaps = []
+		for i,G in enumerate(graphs[:10]):
+			print i
+			sortedWeights = np.sort(G,axis=None)
+			threshold = sortedWeights[-len(G)*10-1]
+        	
+			graph = nx.DiGraph(G>threshold)
+			diff = gh.randomize_graph_count(graph, 2500)
+			maxes.append(max(diff))
+			swaps.append(np.argmax(diff))
+		maxes = np.array(maxes)
+		swaps = np.array(swaps)
+		print "Max Difference: "+str(maxes.mean())+"  "+str(maxes.std())
+		print "Number of Swaps: "+str(swaps.mean())+"  "+str(swaps.std())
 
+	
+def makeSwapData():
+	with open("aznorbert_corrsd.pkl","rb") as f:
+		data = pickle.load(f)
+		
+	swapData = {}
+	
+	for key, graphs in data.iteritems():
+		if key[1] == "lacorr":
+			continue
+		print key
+		keyData = []
+		for i,G in enumerate(graphs):
+			print i
+			sortedWeights = np.sort(G,axis=None)
+			threshold = sortedWeights[-len(G)*10-1]
+        	
+			graph = nx.DiGraph(G>threshold)
+			diff = gh.randomize_graph_count(graph, 3000)
+			keyData.append(diff)
+		swapData[key] = keyData
+	
+	with open("SwapData.pkl",'wb') as f:
+		pickle.dump(swapData,f)
 
 if __name__ == '__main__':
 	main()
