@@ -3,6 +3,7 @@ import csv
 import math
 import cPickle as pickle
 from collections import defaultdict
+from itertools import izip
 import string
 
 GRAPHSIZE = 88
@@ -10,8 +11,8 @@ GRAPHSIZE = 88
 def parse(name):
 	myReader = csv.reader(open(name, 'rb'), delimiter=',')
 	indexdict = {}
-	for index, title in enumerate(next(myReader)):
-		indexdict[title] = index
+	for index, name in enumerate(next(myReader)):
+		indexdict[name] = index
 	pdd = {}
 	for row in myReader:
 		name = row[indexdict['SubjectCode']]
@@ -70,7 +71,8 @@ def createCorrMatrixes(measuredict):
 	
 	boolean = np.zeros(shape=(GRAPHSIZE, GRAPHSIZE))
 	for i in xrange(GRAPHSIZE):
-		for j, (early, final) in enumerate(zip(r_e, r_f)):
+		for j, rates in enumerate(izip(r_e, r_f)):
+			early, final = rates
 			if final > early:
 				boolean[i][j] = 1.0
 	lacorrmat = np.multiply(lcorrmat, boolean)
