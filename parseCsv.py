@@ -40,30 +40,26 @@ def createCorrMatrixes(measuredict):
 	r_e = []
 	r_f = []
 	for i in xrange(GRAPHSIZE):
-		if measuredict['1'][i] == 'NA' or measuredict['3'][i] == 'NA':
+		if measuredict['1'][i] == 'NA' or measuredict['3'][i] == 'NA' or measuredict['5'][i]=='NA':
 			return False
-            #r_e.append(-1.0)
-		else:
-			rate = float(measuredict['1'][i])/float(measuredict['3'][i])
-			rate = max(min(rate,2),0.5)
-			r_e.append(rate)
-		if measuredict['3'][i] == 'NA' or measuredict['5'][i] == 'NA':
-			return False
-            #r_f.append(-1.0)
-		else:
-			rate = float(measuredict['3'][i])/float(measuredict['5'][i])
-			rate = max(min(rate,2),0.5)
-			r_f.append(rate)
+			
+		rate = float(measuredict['1'][i])/float(measuredict['3'][i])
+		rate = max(min(rate,2),0.5)
+		r_e.append(rate)
+		
+		rate = float(measuredict['3'][i])/float(measuredict['5'][i])
+		rate = max(min(rate,2),0.5)
+		r_f.append(rate)
 			
 	corrmat = np.zeros(shape=(GRAPHSIZE, GRAPHSIZE))
 	for i, early in enumerate(r_e):
 		for j, final in enumerate(r_f):
-			if i == j or early == -1.0 or final == -1.0:
+			if i == j:
 				corrmat[i][j] = 0
 			else:
 				corrmat[i][j] = 1 - abs(early - final)/float(early + final)
 				if corrmat[i][j] < 0:
-					print "r_e[i], r_f[j]"
+					print "This shouldn't be possible"
 					
 	boolean = np.zeros(shape=(GRAPHSIZE, GRAPHSIZE))
 	for i, early in enumerate(r_e):
@@ -82,13 +78,19 @@ def createCorrMatrixes(measuredict):
 	
 	return (corrmat, lcorrmat, lacorrmat)
 
-def tresh(G):
+
+def treshold(G):
     sorted_weights = np.sort(G, axis=None)
-    threshold = sorted_weights[-GRAPHSIZE*10-1]
-    return np.matrix(G>threshold)
-    
-		
+    thresh = sorted_weights[-GRAPHSIZE*10-1]
+    return np.matrix(G>tresh)
+    		
 def createFinalData():
+	
+	def treshold(G):
+	    sorted_weights = np.sort(G, axis=None)
+	    thresh = sorted_weights[-GRAPHSIZE*10-1]
+	    return np.matrix(G>tresh)
+	
     data = {}
     pdd = parse('outVolumes2.csv')
     for patientname, patientdata in pdd.iteritems():
@@ -99,18 +101,12 @@ def createFinalData():
         else:
             continue
         corrmatrixes = createCorrMatrixes(patientdata[1])
-        if corrmatrixes == False:
+        if not corrmatrixes:
             continue
-        tcorrmatrixes = [tresh(x) for x in corrmatrixes]
-#            for i in xrange(GRAPHSIZE):
-#                for j in xrange(GRAPHSIZE):
-#                    if matrix[i][j] > threshold:
-#                        matrix[i][j] = 1
-#                    else:
-#                        matrix[i][j] = 0
-        matrixdict = {}
+        tcorrmatrixes = [treshold(x) for x in corrmatrixes]
         corr, lcorr, lacorr = corrmatrixes
         tcorr, tlcorr, tlacorr = tcorrmatrixes
+		matrixdict = {}
         matrixdict['corr'] = corr
         matrixdict['lcorr'] = lcorr
         matrixdict['lacorr'] = lacorr
@@ -146,4 +142,4 @@ def createData():
 		pickle.dump(data,f)
 
 if __name__ == '__main__':
-	createData()
+	createFinalData()
