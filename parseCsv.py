@@ -80,47 +80,44 @@ def createCorrMatrixes(measuredict):
 
 
 def treshold(G):
-    sorted_weights = np.sort(G, axis=None)
-    thresh = sorted_weights[-GRAPHSIZE*10-1]
-    return np.matrix(G>tresh)
-    		
-def createFinalData():
+	sorted_weights = np.sort(G, axis=None)
+	thresh = sorted_weights[-GRAPHSIZE*10-1]
+	return np.matrix(G>thresh)
+		
+def createFinalData(undirected = False, filename="aznorbert_corrsd_new.pkl"):
 	
-	def treshold(G):
-	    sorted_weights = np.sort(G, axis=None)
-	    thresh = sorted_weights[-GRAPHSIZE*10-1]
-	    return np.matrix(G>tresh)
-	
-    data = {}
-    pdd = parse('outVolumes2.csv')
-    for patientname, patientdata in pdd.iteritems():
-        patienttype = patientdata[0]
-        if patienttype in ['NL', 'AD', 'MCI', 'MCI to AD']:
-            if patienttype == 'MCI to AD':
-                patienttype = 'CONVERT'
-        else:
-            continue
-        corrmatrixes = createCorrMatrixes(patientdata[1])
-        if not corrmatrixes:
-            continue
-        tcorrmatrixes = [treshold(x) for x in corrmatrixes]
-        corr, lcorr, lacorr = corrmatrixes
-        tcorr, tlcorr, tlacorr = tcorrmatrixes
+	data = {}
+	pdd = parse('outVolumes2.csv')
+	for patientname, patientdata in pdd.iteritems():
+		patienttype = patientdata[0]
+		if patienttype in ['NL', 'AD', 'MCI', 'MCI to AD']:
+			if patienttype == 'MCI to AD':
+				patienttype = 'CONVERT'
+		else:
+			continue
+		corrmatrixes = createCorrMatrixes(patientdata[1])
+		if not corrmatrixes:
+			continue
+		if undirected:
+			corrmatrixes = [x + x.T for x in corrmatrixes]
+		tcorrmatrixes = [treshold(x) for x in corrmatrixes]
+		corr, lcorr, lacorr = corrmatrixes
+		tcorr, tlcorr, tlacorr = tcorrmatrixes
 		matrixdict = {}
-        matrixdict['corr'] = corr
-        matrixdict['lcorr'] = lcorr
-        matrixdict['lacorr'] = lacorr
-        matrixdict['tcorr'] = tcorr
-        matrixdict['tlcorr'] = tlcorr
-        matrixdict['tlacorr'] = tlacorr
-        data[patientname] = ({}, matrixdict, patienttype)
-        
-    with open('aznorbert_corrsd_new.pkl','wb') as f:
-        pickle.dump(data,f)
-    
-    return data
+		matrixdict['corr'] = corr
+		matrixdict['lcorr'] = lcorr
+		matrixdict['lacorr'] = lacorr
+		matrixdict['tcorr'] = tcorr
+		matrixdict['tlcorr'] = tlcorr
+		matrixdict['tlacorr'] = tlacorr
+		data[patientname] = ({}, matrixdict, patienttype)
+		
+	with open(filename,'wb') as f:
+		pickle.dump(data,f)
+	
+	return data
 
-                               
+							   
 def createData():
 	data = defaultdict(list)
 	pdd = parse('outVolumes2.csv')
@@ -142,4 +139,4 @@ def createData():
 		pickle.dump(data,f)
 
 if __name__ == '__main__':
-	createFinalData()
+	createFinalData(True,"aznorbert_corrsd_undirected.pkl")
