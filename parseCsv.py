@@ -122,6 +122,12 @@ def createData():
 	data = defaultdict(list)
 	pdd = parse('outVolumes2.csv')
 	for patienttype, patientdata in pdd.values():
+		if patienttype == "NL to AD":
+			continue
+		if patienttype == "NL to MCI":
+			continue
+		if patienttype == "MCI to AD":
+			patienttype = "CONVERT"
 		corrmatrixes = createCorrMatrixes(patientdata)
 		if corrmatrixes:
 			c, l, la = corrmatrixes
@@ -139,4 +145,10 @@ def createData():
 		pickle.dump(data,f)
 
 if __name__ == '__main__':
-	createFinalData(True,"aznorbert_corrsd_undirected.pkl")
+	#createFinalData(False,"aznorbert_corrsd.pkl")
+	createData()
+
+
+
+
+

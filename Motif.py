@@ -177,14 +177,17 @@ def PDFstats(data, filename, edgeSwap=False):
 			motifsNL = findMotifs(data, ('NL',corr))
 			motifsMCI = findMotifs(data, ('MCI',corr))
 			motifsAD = findMotifs(data, ('AD',corr))
+			#motifsCONVERT = findMotifs(data, ('CONVERT',corr))
 			if edgeSwap:
 				motifsNLRAND = findMotifs(data, ('NL',corr), randomize=True)
 				motifsMCIRAND = findMotifs(data, ('MCI',corr), randomize=True)
 				motifsADRAND = findMotifs(data, ('AD',corr), randomize=True)
+				#motifsCONVERTRAND = findMotifs(data, ('CONVERT',corr), randomize=True)
 
 			allMotifs = list( set(motifsNL.keys())
 							& set(motifsAD.keys())
 							& set(motifsMCI.keys()) )
+							#& set(motifsCONVERT.keys()) )
 
 			motifStats = []
 			for key in allMotifs:
@@ -238,10 +241,12 @@ def PDFstats(data, filename, edgeSwap=False):
 
 
 def main():
-	with open("aznorbert_corrsd.pkl","rb") as f:
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)	
 	
+	PDFstats(data,"test")
 	
+	"""
 	for key, graphs in data.iteritems():
 		print key
 		maxes = []
@@ -259,6 +264,7 @@ def main():
 		swaps = np.array(swaps)
 		print "Max Difference: "+str(maxes.mean())+"  "+str(maxes.std())
 		print "Number of Swaps: "+str(swaps.mean())+"  "+str(swaps.std())
+		"""
 
 	
 def makeSwapData():
