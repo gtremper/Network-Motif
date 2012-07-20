@@ -29,7 +29,7 @@ unsigned int **childSet;
 unsigned int **Index;  
 
 //total number of enumerated subgraphs.
-long long subgraphCounter; 
+unsigned long long subgraphCounter; 
 
 //g stores the input graph
 Graph *g;

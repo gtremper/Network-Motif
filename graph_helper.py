@@ -22,7 +22,6 @@ def randomize_graph(G, numpasses):
 		G.add_edge(c, b)
 		G.remove_edge(a, b)
 		G.remove_edge(c, d)
-	return G
 
 def randomize_graph_count(G, numpasses):
 	"Performs numpasses edgeswaps and returns diff from original"

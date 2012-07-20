@@ -12,12 +12,12 @@ static DEFAULTOPTIONS(options);
 statsblk(stats);
 setword workspace[160*MAXM];
 
-double * C_main;
+unsigned int * C_main;
 double * C_rand;
 double * mean;
 double * var;
 double* Score;
-long * ID;
+unsigned long long * ID;
 int idxID;
 int head;
 double enumerated_class;
@@ -376,7 +376,7 @@ void Graph::Classify(vertex **subgraph, int level) {
 
 void Graph::AllocateCounter() {
 	int class_num = T->get_leafnum();
-	C_main = new double[class_num + 1];
+	C_main = new unsigned int[class_num + 1];
 	C_rand = new double[class_num];
 	C_main[0] = 0;
 	
@@ -391,7 +391,7 @@ void Graph::AllocateCounter() {
 	}
 	
 	idxID = 0;
-	ID = new long[class_num];
+	ID = new unsigned long long[class_num];
 }
 
 /****************************************************************
@@ -420,7 +420,8 @@ void Graph::print_adjMatrix(char * str) {
 	register int i, j;
 	int l = 0;
 	int index = 0;
-	int maxpow = subgraphSize * subgraphSize -1;
+	ID[idxID] = 0;
+	int maxpow = subgraphSize * (subgraphSize-1) - 1 ;
 
 	for(i = 0; i < subgraphSize; i++) {
 		for(j = 0; j < subgraphSize; j++) {
@@ -432,8 +433,9 @@ void Graph::print_adjMatrix(char * str) {
 			{
 				index = i*(subgraphSize)+(j-l);
 				//fprintf(am, "%d", str[index]);
-				if (str[index] == 1)
-					ID[idxID] += (long) (pow(2, (maxpow - (i*subgraphSize+j))));
+				if (str[index] == 1){
+					ID[idxID] |= 1<<(maxpow - index);
+				}
 			}
 		}
 		//fprintf(am,"\n");
@@ -498,13 +500,14 @@ void Graph::Extract() {
 
 /****************************************************************
 ****************************************************************/
-void Graph::outputMotifResults(int subgraphCounter, char* path){
+void Graph::outputMotifResults(unsigned long long subgraphCounter, char* path){
 	FILE * cm;
 	char file[256];
 	sprintf(file, "%s/MotifCount.txt", path);
 	cm = fopen(file, "w+");
+	fprintf(cm, "%llu\n", subgraphCounter);
 	for(int i=0; i<T->get_leafnum(); i++){
-		fprintf(cm,"%d %.0f %f\n",ID[i],C_main[i+1],C_main[i+1]/subgraphCounter);
+		fprintf(cm, "%llu %u\n", ID[i], C_main[i+1]);
 	}
 	fclose(cm);
 }
