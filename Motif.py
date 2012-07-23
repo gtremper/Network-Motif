@@ -14,13 +14,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import graph_helper as gh
-from collections import defaultdict
 
 USECACHE = False
 
-def convertIDToGraph(id, motifSize, save=False):
+def convertIDToGraph(mid, motifSize, save=False):
 	"""Plot graph with id and motifSize"""
-	binary = bin(id);
+	binary = bin(mid);
 	adj = np.zeros(motifSize*motifSize)
 	l = 0
 	for x in xrange(1,motifSize*motifSize+1):
@@ -65,7 +64,7 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 	else:
 		graphs = data[key]
 
-	motifs = defaultdict(list)
+	motifs = {}
 	numstring ="/"+str(len(graphs))
 	rejected = 0
 	for index,G in enumerate(graphs):
@@ -97,19 +96,28 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 			subgraphs = float(f.next())
 			data = np.loadtxt(f, ndmin=2)
 		
+		motifIDs = set(data[:,0])
+		currentIDs = set(motifs.keys())
+		
+		#Create new list with zeros for new motif
+		for iD in motifIDs-currentIDs:
+			motifs[int(iD)] = [0.]*(index-rejected)
+		
+		#Append zero for previously found motif not in this graph
+		for iD in currentIDs-motifIDs:
+			motifs[int(iD)].append(0.)
+		
+		#Append data for this graph
 		for iD,total in data:
 			percent = total/subgraphs
 			motifs[int(iD)].append(percent)
 			
 	print '\nMotifs Done! Graphs Rejected: '+str(rejected)
-
-	#add zeros to graphs that didn't contain motifs
+	
+	#Finalize
 	for key,value in motifs.iteritems():
-		numZero = len(graphs)-len(value)-rejected
-		value.extend([0 for derp in xrange(numZero)])
-		motifs[int(key)] = np.array(value)
-
-	motifs = dict(motifs)
+		motifs[key] = np.array(value)
+	
 	#add motifs to cache
 	if USECACHE:
 		with open('cache/'+filename,'wb') as f:
@@ -267,9 +275,10 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 
 def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
-		data = pickle.load(f)
-		
-	G = findMotifs(data,("AD","corr"),motifSize=3,degree=10)	
+		data = pickle.load(f)	
+	
+	return findMotifs(data, ('NL','corr'), motifSize = 3)
+	
 	
 	#print "---Starting size 3---"
 	#PDFstats(data, "MotifSize3", motifSize=3, edgeSwap=True)
