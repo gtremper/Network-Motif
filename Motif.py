@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as stats
 import graph_helper as gh
 
-USECACHE = False
+USECACHE = True
 
 def convertIDToGraph(mid, motifSize, save=False):
 	"""Plot graph with id and motifSize"""
@@ -272,29 +272,12 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.log result/*.aux")
 
-
-def main():
-	with open("aznorbert_corrsd_new.pkl","rb") as f:
-		data = pickle.load(f)	
-	
-	return findMotifs(data, ('NL','corr'), motifSize = 3)
-	
-	
-	#print "---Starting size 3---"
-	#PDFstats(data, "MotifSize3", motifSize=3, edgeSwap=True)
-	#print "---Starting size 4---"
-	#PDFstats(data, "MotifSize4", motifSize=4, edgeSwap=True)
-	#print "---Starting size 5---"
-	#PDFstats(data, "MotifSize5", motifSize=5, edgeSwap=True)
-	
-
-	
 def makeSwapData(degree=10):
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
-		
+
 	swapData = {}
-	
+
 	for key, graphs in data.iteritems():
 		print key
 		keyData = []
@@ -302,14 +285,26 @@ def makeSwapData(degree=10):
 			print i
 			sortedWeights = np.sort(G,axis=None)
 			threshold = sortedWeights[-len(G)*degree-1]
-        	
+
 			graph = nx.DiGraph(G>threshold)
 			diff = gh.randomize_graph(graph, 2500)
 			keyData.append(graph)
 		swapData[key] = keyData
-	
+
 	with open("SwapData"+str(degree)+".pkl",'wb') as f:
 		pickle.dump(swapData,f)
+
+
+def main():
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)	
+	
+	print "---Starting size 3---"
+	PDFstats(data, "MotifSize3", motifSize=3, edgeSwap=True)
+	print "---Starting size 4---"
+	PDFstats(data, "MotifSize4", motifSize=4, edgeSwap=True)
+	print "---Starting size 5---"
+	PDFstats(data, "MotifSize5", motifSize=5, edgeSwap=True)
 
 if __name__ == '__main__':
 	main()
