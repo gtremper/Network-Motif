@@ -94,10 +94,13 @@ def findMotifs(data,key,motifSize=3,degree=10,randomize=False):
 			nx.write_edgelist(graph,f,data=False)
 		#Jenky way to use c++ motif finder in python
 		os.system("./Kavosh "+str(motifSize))
-		data = np.loadtxt("result/MotifCount.txt",ndmin=2)
+		with open("result/MotifCount.txt","rb") as f:
+			subgraphs = float(f.next())
+			data = np.loadtxt(f, ndmin=2)
 		
-		for iD,total,percent in data:
-			motifs[int(iD)].append(total if usetotal else percent)
+		for iD,total in data:
+			percent = total/subgraphs
+			motifs[int(iD)].append(percent)
 		
 	print '\nMotifs Done! Graphs Rejected: '+str(rejected)
 	

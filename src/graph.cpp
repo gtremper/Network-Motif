@@ -16,8 +16,8 @@ unsigned int * C_main;
 double * C_rand;
 double * mean;
 double * var;
-double* Score;
-unsigned long long * ID;
+double * Score;
+unsigned long * ID;
 int idxID;
 int head;
 double enumerated_class;
@@ -391,7 +391,7 @@ void Graph::AllocateCounter() {
 	}
 	
 	idxID = 0;
-	ID = new unsigned long long[class_num];
+	ID = new unsigned long[class_num];
 }
 
 /****************************************************************
@@ -507,7 +507,7 @@ void Graph::outputMotifResults(unsigned long long subgraphCounter, char* path){
 	cm = fopen(file, "w+");
 	fprintf(cm, "%llu\n", subgraphCounter);
 	for(int i=0; i<T->get_leafnum(); i++){
-		fprintf(cm, "%llu %u\n", ID[i], C_main[i+1]);
+		fprintf(cm, "%lu %u\n", ID[i], C_main[i+1]);
 	}
 	fclose(cm);
 }
