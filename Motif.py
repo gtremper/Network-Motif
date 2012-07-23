@@ -264,13 +264,47 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.log result/*.aux")
 
+def diststats(graphdict,key,motifsize,degree ):
+	numgraphs = len(graphdict.values()[0])
+	listofentrophy = []
+	listofgini = []
+	listoffatness = []
+	for i in xrange(numgraphs):
+		graphdist = [graphdict[j][i] for i in graphdict.keys()]
+		graphdist.sort()
+		listofentrophy.append(findentrophy(graphdist))
+		listofgini.append(findgini(graphdist))
+		listoffatness.append(findfatness(graphdist))
+	f = open('result/motifdiststats'+str(key)+'_'+str(motifsize)+'_'+str(degree)+'.txt', 'wb')
+	f.write('Entrophy Mean: ' + str(listofentrophy.mean()))
+	f.write('Entrophy Std: ' + str(listofentrophy.std()))
+	f.write('Gini Mean: ' + str(listofgini.mean()))
+	f.write('Gini Std: ' + str(listofgini.std()))
+	f.write('Fatness Mean: ' + str(listoffatness.mean()))
+	f.write('Fatness Std: ' + str(listoffatness.std()))
+	f.close()
+	
+def findentrophy(x):
+	sum = 0
+	for value in x:
+		sum += math.log(value) * value
+	return -sum
+
+def findgini(x):
+	N = len(x)
+	B = sum( xi * (N-i) for i,xi in enumerate(x) ) / (N*sum(x))
+	return 1 + (1./N) - 2*B
+		
+def findfatness(x):
+	N = min(int(len(x)/5), 1)
+	return sum(x[:N])/sum(x[N:])
 
 def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
 		
 	G = findMotifs(data,("AD","corr"),motifSize=3,degree=10)	
-	
+	diststats(G, ("AD","corr"), 3, 10)
 	#print "---Starting size 3---"
 	#PDFstats(data, "MotifSize3", motifSize=3, edgeSwap=True)
 	#print "---Starting size 4---"
