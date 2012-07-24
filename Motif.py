@@ -218,7 +218,7 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 							& set(motifsCONVERTRAND.keys()) )
 
 			motifStats = []
-			for key in allMotifs:
+			for key in allMotifs[:30]:
 				c1 = stats.ttest_ind(motifsNL[key], motifsMCI[key])
 				c2 = stats.ttest_ind(motifsNL[key], motifsAD[key])
 				c3 = stats.ttest_ind(motifsNL[key], motifsCONVERT[key])
@@ -333,7 +333,7 @@ def makeSwapData(degree=10):
 
 def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
-		data = pickle.load(f)	
+		data = pickle.load(f)
 	
 	print "---Starting size 3---"
 	PDFstats(data, "MotifSize3", motifSize=3, edgeSwap=True)
