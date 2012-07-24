@@ -14,6 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import graph_helper as gh
+import math
 
 USECACHE = False
 
@@ -271,26 +272,135 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.log result/*.aux")
+	
+def PDFDistStats(data, filename, edgeSwap=False, motifSize=3, degree=10):
+	"""Output a latex pdf of motif stats"""
+	filename = "result/" + filename + ".tex"
+
+	if not edgeSwap:
+		motifsNLRAND = motifsMCIRAND = motifsADRAND = motifsCONVERTRAND = findMotifs(data,"rand",motifSize=motifSize,degree=degree)
+
+	with open(filename,'wb') as f:
+		f.write(
+		"\\documentclass{article}\n"
+		"\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl,chngpage}\n"
+		"\\usepackage[landscape]{geometry}"
+		"\\definecolor{yellow}{RGB}{255,255,70}\n"
+		"\\definecolor{orange}{RGB}{255,165,70}\n"
+		"\\definecolor{red}{RGB}{255,70,70}\n"
+		"\\title{Motif Data}\n"
+		"\\author{Graham Tremper}\n"
+		"\\date{}\n"
+		"\\fancyhead{}\n"
+		"\\begin{document}\n"
+		)
+		
+		if edgeSwap:
+			with open("SwapData"+str(degree)+".pkl","rb") as pic:
+				randGraphs = pickle.load(pic)
+		
+		statistics = {}		
+		for corr in ('corr','lcorr','lacorr'):
+			print "Starting " + corr +"..."
+			motifsNL = findMotifs(data, ('NL',corr), motifSize = motifSize, degree=degree)
+			motifsMCI = findMotifs(data, ('MCI',corr), motifSize = motifSize, degree=degree)
+			motifsAD = findMotifs(data, ('AD',corr), motifSize = motifSize, degree=degree)
+			motifsCONVERT = findMotifs(data, ('CONVERT',corr), motifSize = motifSize, degree=degree)
+			if edgeSwap:
+				motifsNLRAND = findMotifs(data, ('NL',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
+				motifsMCIRAND = findMotifs(data, ('MCI',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
+				motifsADRAND = findMotifs(data, ('AD',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
+				motifsCONVERTRAND = findMotifs(data, ('CONVERT',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
+
+			allMotifs = list( set(motifsNL.keys())
+							& set(motifsAD.keys())
+							& set(motifsMCI.keys())
+							& set(motifsCONVERT.keys())
+							& set(motifsNLRAND.keys())
+							& set(motifsMCIRAND.keys())
+							& set(motifsADRAND.keys())
+							& set(motifsCONVERTRAND.keys()) )
+
+			motifStats = []
+			for key in allMotifs:
+				c1 = stats.ttest_ind(motifsNL[key], motifsMCI[key])
+				c2 = stats.ttest_ind(motifsNL[key], motifsAD[key])
+				c3 = stats.ttest_ind(motifsNL[key], motifsCONVERT[key])
+				c4 = stats.ttest_ind(motifsMCI[key], motifsAD[key])
+				c5 = stats.ttest_ind(motifsMCI[key], motifsCONVERT[key])
+				c6 = stats.ttest_ind(motifsAD[key], motifsCONVERT[key])
+				c7 = stats.ttest_ind(motifsNL[key], motifsNLRAND[key])
+				c8 = stats.ttest_ind(motifsMCI[key], motifsMCIRAND[key])
+				c9 = stats.ttest_ind(motifsAD[key], motifsADRAND[key])
+				c10 = stats.ttest_ind(motifsCONVERT[key], motifsCONVERTRAND[key])
+				motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
+
+			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
+
+			f.write(
+			"\\begin{table}[t]\n"
+			"\\begin{adjustwidth}{-1.5in}{-1.5in} "
+			"\\caption{Motif T-test results from "+corr+" data with using edge swap}\n"
+			"\\centering\n"
+			"\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
+			"\\hline\n"
+			"\\rowcolor[gray]{0.85}\n"
+			"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
+			)
+			for stat in motifStats:
+				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
+				for sign,col in stat[1:]:
+					cell = " & {0:.3}".format(col)
+					if sign > 0:
+						cell += '(+)'
+					else:
+						cell += '(-)'
+
+					if col <= 0.01:
+						cell += " \\cellcolor{red} "
+					elif col <= 0.05:
+						cell += " \\cellcolor{orange}"
+					elif col <= 0.1:
+						cell += " \\cellcolor{yellow}"
+					f.write(cell)
+				f.write("\\\\ \\hline\n")
+
+			f.write(
+			"\\end{tabular}\n"
+			"\\end{adjustwidth}"
+			"\\end{table}\n"
+			)
+
+		f.write("\\end{document}\n")
+
+	os.system("pdflatex -output-directory result " + filename)
+	os.system("rm result/*.log result/*.aux")
 
 def diststats(graphdict,key,motifsize,degree ):
 	numgraphs = len(graphdict.values()[0])
 	listofentrophy = []
 	listofgini = []
 	listoffatness = []
-	for i in xrange(numgraphs):
-		graphdist = [graphdict[j][i] for i in graphdict.keys()]
+	for j in xrange(numgraphs):
+		graphdist = [graphdict[i][j] for i in graphdict.keys()]
 		graphdist.sort()
+		while graphdist[0] == 0:
+			graphdist = graphdist[1:]
 		listofentrophy.append(findentrophy(graphdist))
 		listofgini.append(findgini(graphdist))
 		listoffatness.append(findfatness(graphdist))
-	f = open('result/motifdiststats'+str(key)+'_'+str(motifsize)+'_'+str(degree)+'.txt', 'wb')
-	f.write('Entrophy Mean: ' + str(listofentrophy.mean()))
-	f.write('Entrophy Std: ' + str(listofentrophy.std()))
-	f.write('Gini Mean: ' + str(listofgini.mean()))
-	f.write('Gini Std: ' + str(listofgini.std()))
-	f.write('Fatness Mean: ' + str(listoffatness.mean()))
-	f.write('Fatness Std: ' + str(listoffatness.std()))
-	f.close()
+	listofentrophy = np.array(listofentrophy)
+	listofgini = np.array(listofgini)
+	listoffatness = np.array(listoffatness)
+#	f = open('result/motifdiststats'+str(key)+'_'+str(motifsize)+'_'+str(degree)+'.txt', 'wb')
+#	f.write('Entrophy Mean: ' + str(listofentrophy.mean()) + '\n')
+#	f.write('Entrophy Std: ' + str(listofentrophy.std())+ '\n')
+#	f.write('Gini Mean: ' + str(listofgini.mean())+ '\n')
+#	f.write('Gini Std: ' + str(listofgini.std())+ '\n')
+#	f.write('Fatness Mean: ' + str(listoffatness.mean())+ '\n')
+#	f.write('Fatness Std: ' + str(listoffatness.std())+ '\n')
+#	f.close()
+	
 	
 def findentrophy(x):
 	sum = 0
@@ -304,6 +414,7 @@ def findgini(x):
 	return 1 + (1./N) - 2*B
 		
 def findfatness(x):
+	x.sort(reverse=True)
 	N = min(int(len(x)/5), 1)
 	return sum(x[:N])/sum(x[N:])
 
@@ -311,8 +422,9 @@ def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
 		
-	G = findMotifs(data,("AD","corr"),motifSize=3,degree=10)	
-	diststats(G, ("AD","corr"), 3, 10)
+	for key in data.keys():
+		G = findMotifs(data,key,motifSize=3,degree=10)	
+		diststats(G, key, 3, 10)
 
 	#print "---Starting size 3---"
 	#PDFstats(data, "MotifSize3", motifSize=3, edgeSwap=True)
