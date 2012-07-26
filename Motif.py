@@ -39,13 +39,11 @@ class MotifData:
 		return self.keys.__contains__(unicode(item))
 	
 	def __iter__(self):
-		return self.data.itervalues()
+		return (sorted(g.values()) for g in self.data)
 	
 	def __len__(self):
 		return len(self.data)
 	
-	def sortedValues(self):
-		return sorted(self.data.values())
 	
 	#def getTotals(self):
 	#	t = {}
