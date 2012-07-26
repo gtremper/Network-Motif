@@ -36,8 +36,6 @@ Graph *g;
 
 //long num;
 
-bool isRand;
-
 
 /****************************************************************
 ****************************************************************/
@@ -366,7 +364,6 @@ int main(int argc, char *argv[]) {
 
 	//clock_t startTime = clock();
 	//for main graph
-	//isRand = false;
 	subgraphCounter = 0;
 	Enumerate();
 	g->AllocateCounter();

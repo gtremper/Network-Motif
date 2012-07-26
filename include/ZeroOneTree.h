@@ -11,8 +11,8 @@ class Node {
 		bool visited;
 		Node * left;
 		Node * right;
-		Node() {	left = NULL; right = NULL; visited = false;}
-        //~Node() { printf("Destroying ... \n"); fflush(stdout); }// if(right != NULL) delete right; if(left != NULL) delete left; }
+		Node() { left = NULL; right = NULL; visited = false;}
+        //~Node() { if(right != NULL) delete right; if(left != NULL) delete left; }
 };
 
 class Leaf:public Node {

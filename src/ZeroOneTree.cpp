@@ -11,9 +11,11 @@ tree::tree(int subgraphSize) {
 }
 
 tree::~tree() {
-/*    delete [] node;
+	/*
+    delete [] node;
     delete [] leaf;
-    delete root;*/
+    delete root;
+*/
 }
 
 Node * tree::add_node() {

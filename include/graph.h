@@ -19,7 +19,7 @@ class Graph {
 public:
     Graph(const int n, const int k);
     ~Graph();
-    void  setPath(char *path);
+    void setPath(char *path);
 	void addEdgeAdjMat(vertex u, vertex v);
 	void deleteEdgeAdjMat(vertex u, vertex v);
 	void swapEdge(vertex v, int ind, vertex u);

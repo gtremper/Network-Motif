@@ -22,9 +22,8 @@ USECACHE = True
 class MotifData:
 	"Class containing motif data for a set of graphs"
 	
-	def __init__(self, data, totalPat):
+	def __init__(self, data):
 		self.subgraphs, self.data = zip(*data)
-		self.totalPatients = totalPat
 		allkeys = set()
 		for dic in self.data:
 			allkeys.update(set(dic.keys()))
@@ -34,9 +33,30 @@ class MotifData:
 		motif = unicode(motif)
 		row = [d[motif] if motif in d else 0. for d in self.data]
 		return np.array(row)
+	
+	def __contains__(self, item):
+		return self.keys.__contains__(item)
+	
+	def __iter__(self):
+		return self.data.itervalues()
+	
+	def __len__(self):
+		return len(self.data)
+	
+	def sortedValues(self):
+		return sorted(self.data.values())
+	
+	#def getTotals(self):
+	#	t = {}
+	#	for i in 
+
+	def getPatient(self, pat):
+		return self.data[pat]
+
+	def getSubgraphs(self, pat):
+		return self.subgraphs[pat]
+		
 			
-	def iterPatients(self):
-		return iter(self.data)
 						
 		
 
@@ -86,7 +106,7 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 	if os.path.exists('cache/'+filename) and USECACHE:
 		print "in cache"
 		cachedata = json.load( open('cache/'+filename,"rb"))
-		return MotifData(cachedata, len(graphs))
+		return MotifData(cachedata)
 
 	motifs = []
 	numstring ="/"+str(len(graphs))
@@ -132,7 +152,7 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 	if USECACHE:
 		json.dump(motifs, open('cache/'+filename,'wb'), separators=(',',':'))
 
-	return MotifData(motifs, len(graphs))
+	return MotifData(motifs)
 
 def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 	"""Draws graph compairing average motif count between samples in the data"""
@@ -344,28 +364,24 @@ def makeSwapData(degree=10):
 		pickle.dump(swapData,f)
 
 
-def translateCache():
-	for rand in ("","RAND"):
-		for corr in ("corr","lcorr","lacorr"):
-			for ty in ("NL","MCI","AD","CONVERT"):
-				for num in ("3","4","5"):
-					filename = "cache/"+str((ty,corr))+"s"+num+"d10.json"
-					data = json.load(open(filename,"rb"))
-					newdata = {}
-					for key,value in data.iteritems():
-						motifDict = {}
-						for i,ele in enumerate(value):
-							if ele>0.0:
-								motifDict[i] = ele
-						newdata[key] = motifDict
-					json.dump(newdata, open(filename,"wb") )
+def buildCache():
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+	
+	#with open("SwapData10.pkl","rb") as pic:
+	#	randGraphs = pickle.load(pic)
+		
+	for corr in ("corr","lcorr","lacorr"):
+		for ty in ("AD","MCI","NL","CONVERT"):
+			print corr + ty
+			findMotifs(data, (ty,corr), motifSize=6)
 					
 								
 
 def simple():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
-	findMotifs(data, ('AD','corr'), motifSize=6)
+	findMotifs(data, ('AD','corr'), motifSize=3)
 
 def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
@@ -377,10 +393,11 @@ def main():
 	PDFstats(data, "MotifSize4", motifSize=4, edgeSwap=True)
 	print "---Starting size 5---"
 	PDFstats(data, "MotifSize5", motifSize=5, edgeSwap=True)
-	print "---Starting size 6---"
-	PDFstats(data, "MotifSize6", motifSize=6, edgeSwap=True)
+	#print "---Starting size 6---"
+	#PDFstats(data, "MotifSize6", motifSize=6, edgeSwap=True)
 
 if __name__ == '__main__':
 	main()
 	#translateCache()
 	#simple()
+	#buildCache()

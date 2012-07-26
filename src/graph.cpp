@@ -13,10 +13,6 @@ statsblk(stats);
 setword workspace[160*MAXM];
 
 unsigned int * C_main;
-double * C_rand;
-double * mean;
-double * var;
-double * Score;
 unsigned long * ID;
 int idxID;
 int head;
@@ -24,7 +20,6 @@ double enumerated_class;
 
 FILE * o; 
 
-extern bool isRand;
 /****************************************************************
 ****************************************************************/
 
@@ -84,13 +79,9 @@ Graph::~Graph() {
     delete [] orbits;
 	delete [] nauty_g;
     delete [] ID;
-    delete [] mean;
-    delete [] var;
-    delete [] Score;
-    delete [] C_rand;
     delete [] C_main;
     delete [] degree;
- //   delete T;
+	delete T;
     fclose(am);
 }
 
@@ -321,54 +312,28 @@ void Graph::Classify(vertex **subgraph, int level) {
 	
 	T->init_cur_node();
 	
-	if (!isRand) {
-		for (i = 0; i < subgraphSize-1; i++) {	
-			for(j = 0; j < subgraphSize; j++) {
-				if(i == j)
-					continue;
-				if(isConnected(tempSubgraph[lab[i]], tempSubgraph[lab[j]])) 
-					T->insert_one_main();
-				else
-					T->insert_zero_main();
-			}
-		}
-		
-		for(j = 0; j < subgraphSize-2; j++) {
+	for (i = 0; i < subgraphSize-1; i++) {	
+		for(j = 0; j < subgraphSize; j++) {
+			if(i == j)
+				continue;
 			if(isConnected(tempSubgraph[lab[i]], tempSubgraph[lab[j]])) 
 				T->insert_one_main();
 			else
-				T->insert_zero_main();				
+				T->insert_zero_main();
 		}
-		
-		if(isConnected(tempSubgraph[lab[i]], tempSubgraph[lab[j]])) 
-			T->update_one_main(1);
-		else 
-			T->update_zero_main(1);
 	}
-	else {
-		for (i = 0; i < subgraphSize-1; i++) {	
-			for(j = 0; j < subgraphSize; j++) {
-				if(i == j)
-					continue;
-				if(isConnected(tempSubgraph[lab[i]], tempSubgraph[lab[j]])) 
-					T->insert_one_rand();
-				else
-					T->insert_zero_rand();
-			}
-		}
-		
-		for(j = 0; j < subgraphSize-2; j++) {
-			if(isConnected(tempSubgraph[lab[i]], tempSubgraph[lab[j]])) 
-				T->insert_one_rand();
-			else
-				T->insert_zero_rand();				
-		}
-		
+	
+	for(j = 0; j < subgraphSize-2; j++) {
 		if(isConnected(tempSubgraph[lab[i]], tempSubgraph[lab[j]])) 
-			T->update_one_rand(1);
-		else 
-			T->update_zero_rand(1);
+			T->insert_one_main();
+		else
+			T->insert_zero_main();				
 	}
+	
+	if(isConnected(tempSubgraph[lab[i]], tempSubgraph[lab[j]])) 
+		T->update_one_main(1);
+	else 
+		T->update_zero_main(1);
 }
 
 /****************************************************************
@@ -377,18 +342,7 @@ void Graph::Classify(vertex **subgraph, int level) {
 void Graph::AllocateCounter() {
 	int class_num = T->get_leafnum();
 	C_main = new unsigned int[class_num + 1];
-	C_rand = new double[class_num];
 	C_main[0] = 0;
-	
-	mean = new double[class_num];
-	var = new double[class_num];
-	Score = new double[class_num];
-	
-	register int i;
-	for(i = 0; i < class_num; i++) {
-		mean[i] = 0;
-		var[i] = 0;
-	}
 	
 	idxID = 0;
 	ID = new unsigned long[class_num];
@@ -401,7 +355,6 @@ void Graph::DFS(Node * cur) {
 	if(!cur->left && !cur->right) {
 		Leaf * leaf = (Leaf *)cur;
 		if(leaf->count > 0) {
-			C_rand[head] = leaf->count;
 			head++;
 			leaf->count = 0;
 		}
@@ -479,23 +432,9 @@ void Graph::Extract() {
 	Node * current = T->return_root();
 	
 	head = 0;
-	if(isRand) 
-		DFS(current);
-	
-	else {
-		DFSmain(current, adj_str, 0);
-		enumerated_class = C_main[0];	
-		//printf("Number of Non-isomorphic Classes: %.0f\n", enumerated_class);
-	}
-	
-	if(isRand) {
-		j = 0;
-		for(i = 0; i < class_num; i++) {
-			mean[j] += C_rand[i];
-			var[j] += (C_rand[i]*C_rand[i]);
-			j++;
-		}
-	}
+	DFSmain(current, adj_str, 0);
+	enumerated_class = C_main[0];	
+	//printf("Number of Non-isomorphic Classes: %.0f\n", enumerated_class);
 }
 
 /****************************************************************
@@ -512,7 +451,7 @@ void Graph::outputMotifResults(unsigned long long subgraphCounter, char* path){
 	fclose(cm);
 }
 
-
+/*
 void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
 	//cm2 is the same info as cm but in an easier to parse format
 	FILE * cm;
@@ -563,3 +502,4 @@ void Graph::calculateZSCORE(int RAND, int subgraphCounter, char *path) {
 	}
 	fclose (cm2);
 }
+*/
