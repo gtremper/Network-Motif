@@ -19,7 +19,7 @@ import math
 import json
 import heapq
 
-USECACHE = False
+USECACHE = True
 
 class MotifData:
 	"Class containing motif data for a set of graphs"
@@ -412,18 +412,13 @@ def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	os.system("rm result/*.log result/*.aux")
 
 def diststats(graphdict):
-	numgraphs = len(graphdict.values()[0])
 	listofentrophy = []
 	listofgini = []
 	listoffatness = []
-	for j in xrange(numgraphs):
-		graphdist = [graphdict[i][j] for i in graphdict.keys()]
-		graphdist.sort()
-		while graphdist[0] == 0:
-			graphdist = graphdist[1:]
-		listofentrophy.append(findentrophy(graphdist))
-		listofgini.append(findgini(graphdist))
-		listoffatness.append(findfatness(graphdist))
+	for graph in graphdict:
+		listofentrophy.append(findentrophy(graph))
+		listofgini.append(findgini(graph))
+		listoffatness.append(findfatness(graph))
 	listofentrophy = np.array(listofentrophy)
 	listofgini = np.array(listofgini)
 	listoffatness = np.array(listoffatness) 
