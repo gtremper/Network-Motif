@@ -11,12 +11,36 @@ import random
 import cPickle as pickle
 import networkx as nx
 import numpy as np
+from scipy.sparse import dok_matrix
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 import graph_helper as gh
 import math
+import json
 
 USECACHE = True
+
+class MotifData:
+	"Class containing motif data for a set of graphs"
+	
+	def __init__(self, data, totalPat):
+		self.subgraphs, self.data = zip(*data)
+		self.totalPatients = totalPat
+		allkeys = set()
+		for dic in self.data:
+			allkeys.update(set(dic.keys()))
+		self.keys = allkeys
+			
+	def __getitem__(self, motif):
+		motif = unicode(motif)
+		row = [d[motif] if motif in d else 0. for d in self.data]
+		return np.array(row)
+			
+	def iterPatients(self):
+		return iter(self.data)
+						
+		
+
 
 def convertIDToGraph(mid, motifSize, save=False):
 	"""Plot graph with id and motifSize"""
@@ -50,14 +74,6 @@ def genRandMats(num):
 
 def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 	"""Main finding motifs routine"""
-
-	#Check cache
-	filename = "" if randGraphs is None else "RAND"
-	filename += str(key)+'s'+str(int(motifSize))+'d'+str(int(degree))+".pkl"
-	if os.path.exists('cache/'+filename) and USECACHE:
-		print "in cache"
-		with open('cache/'+filename,"rb") as f:
-			return pickle.load(f)
 	
 	#generate random matricies
 	if key == "rand":
@@ -65,7 +81,15 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 	else:
 		graphs = data[key]
 
-	motifs = {}
+	#Check cache
+	filename = "" if randGraphs is None else "RAND"
+	filename += str(key)+'s'+str(int(motifSize))+'d'+str(int(degree))+".json"
+	if os.path.exists('cache/'+filename) and USECACHE:
+		print "in cache"
+		cachedata = json.load( open('cache/'+filename,"rb"))
+		return MotifData(cachedata, len(graphs))
+
+	motifs = []
 	numstring ="/"+str(len(graphs))
 	rejected = 0
 	for index,G in enumerate(graphs):
@@ -97,34 +121,19 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 			subgraphs = float(f.next())
 			data = np.loadtxt(f, ndmin=2)
 		
-		motifIDs = set(data[:,0])
-		currentIDs = set(motifs.keys())
-		
-		#Create new list with zeros for new motif
-		for iD in motifIDs-currentIDs:
-			motifs[int(iD)] = [0.]*(index-rejected)
-		
-		#Append zero for previously found motif not in this graph
-		for iD in currentIDs-motifIDs:
-			motifs[int(iD)].append(0.)
-		
 		#Append data for this graph
+		personMotifs = {}
 		for iD,total in data:
-			percent = total/subgraphs
-			motifs[int(iD)].append(percent)
+			personMotifs[unicode(int(iD))] = total/subgraphs
+		motifs.append((int(subgraphs),personMotifs))
 			
 	print '\nMotifs Done! Graphs Rejected: '+str(rejected)
 	
-	#Finalize
-	for key,value in motifs.iteritems():
-		motifs[key] = np.array(value)
-	
 	#add motifs to cache
 	if USECACHE:
-		with open('cache/'+filename,'wb') as f:
-			pickle.dump(motifs,f)
+		json.dump(motifs, open('cache/'+filename,'wb'), separators=(',',':'))
 
-	return motifs
+	return MotifData(motifs, len(graphs))
 
 def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 	"""Draws graph compairing average motif count between samples in the data"""
@@ -209,27 +218,31 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 				motifsADRAND = findMotifs(data, ('AD',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
 				motifsCONVERTRAND = findMotifs(data, ('CONVERT',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
 
-			allMotifs = list( set(motifsNL.keys())
-							& set(motifsAD.keys())
-							& set(motifsMCI.keys())
-							& set(motifsCONVERT.keys())
-							& set(motifsNLRAND.keys())
-							& set(motifsMCIRAND.keys())
-							& set(motifsADRAND.keys())
-							& set(motifsCONVERTRAND.keys()) )
+			allMotifs = list( motifsNL.keys
+							& motifsAD.keys
+							& motifsMCI.keys
+							& motifsCONVERT.keys
+							& motifsNLRAND.keys
+							& motifsMCIRAND.keys
+							& motifsADRAND.keys
+							& motifsCONVERTRAND.keys )
 
 			motifStats = []
 			for key in allMotifs[:30]:
-				c1 = stats.ttest_ind(motifsNL[key], motifsMCI[key])
-				c2 = stats.ttest_ind(motifsNL[key], motifsAD[key])
-				c3 = stats.ttest_ind(motifsNL[key], motifsCONVERT[key])
-				c4 = stats.ttest_ind(motifsMCI[key], motifsAD[key])
-				c5 = stats.ttest_ind(motifsMCI[key], motifsCONVERT[key])
-				c6 = stats.ttest_ind(motifsAD[key], motifsCONVERT[key])
-				c7 = stats.ttest_ind(motifsNL[key], motifsNLRAND[key])
-				c8 = stats.ttest_ind(motifsMCI[key], motifsMCIRAND[key])
-				c9 = stats.ttest_ind(motifsAD[key], motifsADRAND[key])
-				c10 = stats.ttest_ind(motifsCONVERT[key], motifsCONVERTRAND[key])
+				norm = motifsNL[key]
+				mci = motifsMCI[key]
+				ad = motifsAD[key]
+				conv = motifsCONVERT[key]
+				c1 = stats.ttest_ind(norm, mci)
+				c2 = stats.ttest_ind(norm, ad)
+				c3 = stats.ttest_ind(norm, conv)
+				c4 = stats.ttest_ind(mci, ad)
+				c5 = stats.ttest_ind(mci, conv)
+				c6 = stats.ttest_ind(ad, conv)
+				c7 = stats.ttest_ind(norm, motifsNLRAND[key])
+				c8 = stats.ttest_ind(mci, motifsMCIRAND[key])
+				c9 = stats.ttest_ind(ad, motifsADRAND[key])
+				c10 = stats.ttest_ind(conv, motifsCONVERTRAND[key])
 				motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
 
 			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
@@ -469,6 +482,44 @@ def makeSwapData(degree=10):
 #	PDFstats(data, "MotifSize4", motifSize=4, edgeSwap=True)
 #	print "---Starting size 5---"
 #	PDFstats(data, "MotifSize5", motifSize=5, edgeSwap=True)
+def translateCache():
+	for rand in ("","RAND"):
+		for corr in ("corr","lcorr","lacorr"):
+			for ty in ("NL","MCI","AD","CONVERT"):
+				for num in ("3","4","5"):
+					filename = "cache/"+str((ty,corr))+"s"+num+"d10.json"
+					data = json.load(open(filename,"rb"))
+					newdata = {}
+					for key,value in data.iteritems():
+						motifDict = {}
+						for i,ele in enumerate(value):
+							if ele>0.0:
+								motifDict[i] = ele
+						newdata[key] = motifDict
+					json.dump(newdata, open(filename,"wb") )
+					
+								
+
+def simple():
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+	findMotifs(data, ('AD','corr'), motifSize=6)
+
+def main():
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+	
+	print "---Starting size 3---"
+	PDFstats(data, "MotifSize3", motifSize=3, edgeSwap=True)
+	print "---Starting size 4---"
+	PDFstats(data, "MotifSize4", motifSize=4, edgeSwap=True)
+	print "---Starting size 5---"
+	PDFstats(data, "MotifSize5", motifSize=5, edgeSwap=True)
+	print "---Starting size 6---"
+	PDFstats(data, "MotifSize6", motifSize=6, edgeSwap=True)
+>>>>>>> 39cdd7265b8c81a1b784e697efb214a4c22f7a01
 
 if __name__ == '__main__':
 	main()
+	#translateCache()
+	#simple()
