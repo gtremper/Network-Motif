@@ -17,6 +17,7 @@ import scipy.stats as stats
 import graph_helper as gh
 import math
 import json
+import heapq
 
 USECACHE = False
 
@@ -36,7 +37,7 @@ class MotifData:
 		return np.array(row)
 	
 	def __contains__(self, item):
-		return self.keys.__contains__(item)
+		return self.keys.__contains__(unicode(item))
 	
 	def __iter__(self):
 		return self.data.itervalues()
@@ -246,6 +247,8 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 							& motifsMCIRAND.keys
 							& motifsADRAND.keys
 							& motifsCONVERTRAND.keys )
+							
+			allMotifs = heapq.nlargest(30, allMotifs, key = lambda x: motifsNL[x].mean())
 
 			motifStats = []
 			for key in allMotifs[:30]:
