@@ -18,6 +18,7 @@ import graph_helper as gh
 import math
 import json
 import heapq
+from itertools import izip
 
 USECACHE = True
 
@@ -40,25 +41,24 @@ class MotifData:
 		return self.keys.__contains__(unicode(item))
 	
 	def __iter__(self):
-		return (sorted(g.values()) for g in self.data)
+		return (sorted(g.values()) for g in iter(self.data))
 	
 	def __len__(self):
 		return len(self.data)
 	
 	
-	#def getTotals(self):
-	#	t = {}
-	#	for i in 
+	def iterTotals(self):
+		for d,sub in izip(self.data,self.subgraphs):
+			t = {}
+			for motif,value in d.iteritems():
+				t[int(i)] = int(value*sub+0.1)
+			yield t
 
 	def getPatient(self, pat):
 		return self.data[pat]
 
 	def getSubgraphs(self, pat):
-		return self.subgraphs[pat]
-		
-			
-						
-		
+		return self.subgraphs[pat]	
 
 
 def convertIDToGraph(mid, motifSize, save=False):
@@ -509,7 +509,7 @@ def main():
 #	PDFstats(data, "MotifSize6", motifSize=6, edgeSwap=True)
 
 if __name__ == '__main__':
-	main()
+	#main()
 	#translateCache()
 	#simple()
-	#buildCache()
+	buildCache()
