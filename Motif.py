@@ -273,7 +273,7 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.log result/*.aux")
 	
-def PDFDistStats(data, filename, edgeSwap=False, motifSize=3, degree=10):
+def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	"""Output a latex pdf of motif stats"""
 	filename = "result/" + filename + ".tex"
 
@@ -322,7 +322,7 @@ def PDFDistStats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 							& set(motifsCONVERTRAND.keys()) )
 
 			motifStats = []
-			for key in allMotifs:
+			for key in allMotifs[:30]:
 				c1 = stats.ttest_ind(motifsNL[key], motifsMCI[key])
 				c2 = stats.ttest_ind(motifsNL[key], motifsAD[key])
 				c3 = stats.ttest_ind(motifsNL[key], motifsCONVERT[key])
@@ -376,7 +376,7 @@ def PDFDistStats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.log result/*.aux")
 
-def diststats(graphdict,key,motifsize,degree ):
+def diststats(graphdict):
 	numgraphs = len(graphdict.values()[0])
 	listofentrophy = []
 	listofgini = []
@@ -391,7 +391,8 @@ def diststats(graphdict,key,motifsize,degree ):
 		listoffatness.append(findfatness(graphdist))
 	listofentrophy = np.array(listofentrophy)
 	listofgini = np.array(listofgini)
-	listoffatness = np.array(listoffatness)
+	listoffatness = np.array(listoffatness) 
+	return  (listofentrophy, listofgini, listoffatness)
 #	f = open('result/motifdiststats'+str(key)+'_'+str(motifsize)+'_'+str(degree)+'.txt', 'wb')
 #	f.write('Entrophy Mean: ' + str(listofentrophy.mean()) + '\n')
 #	f.write('Entrophy Std: ' + str(listofentrophy.std())+ '\n')
