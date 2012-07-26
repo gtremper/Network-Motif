@@ -346,8 +346,12 @@ int main(int argc, char *argv[]) {
 	
 	//Hardcoded inputs so it runs faster
 	subgraphSize = atoi(argv[1]);
-	char* input_filename = "result/OUTPUT.txt";
-	char* output_directory = "result";
+	char filename[256];
+	sprintf(filename,"input/%s", argv[2]);
+	//char* input_filename = "result/OUTPUT.txt";
+	//char* output_directory = "result";
+	char* output_directory = "output";
+	char* input_filename = filename;
 	
 	subgraph = new int*[subgraphSize];
 	for (int i = 0; i < subgraphSize; i++)
