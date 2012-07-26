@@ -91,6 +91,20 @@ def genRandMats(num):
 		mats.append(x)
 	return mats
 
+def createKavoshInput(data, degree=10):
+	for key in data.keys():
+		for index, G in enumerate(data[key]):
+			if np.count_nonzero(G)<len(G)*degree:
+				continue
+			#calculate threshold
+			sortedWeights = np.sort(G,axis=None)
+			threshold = sortedWeights[-len(G)*degree-1]
+			graph = nx.DiGraph(G>threshold)
+			graph = nx.convert_node_labels_to_integers(graph,1)
+			with open('input/' +str(key)+'_'+str(index)+' .txt','wb') as f:
+				f.write(str(len(graph)) + '\n')
+				nx.write_edgelist(graph,f,data=False)
+
 def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 	"""Main finding motifs routine"""
 	
@@ -372,8 +386,8 @@ def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 
 			f.write(
 			"\\begin{table}[t]\n"
-			"\\begin{adjustwidth}{-1.5in}{-1.5in} "
-			"\\caption{Motif T-test results from "+corr+" data with using edge swap}\n"
+			"\\begin{adjustwidth}{-2in}{-2in} "
+			"\\caption{Motif Distribution T-test results from "+corr+" data with using edge swap}\n"
 			"\\centering\n"
 			"\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
 			"\\hline\n"
@@ -481,8 +495,12 @@ def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	print "---Starting size 3---"
-	PDFdiststats(data, "MotifSize3dist", motifSize=3, edgeSwap=True)
+	createKavoshInput(data, 10)
+	with open("SwapData10.pkl","rb") as f:
+		data = pickle.load(f)
+	createKavoshInput(data, 10)
+	#print "---Starting size 3---"
+	#PDFdiststats(data, "MotifSize3dist", motifSize=3, edgeSwap=True)
 #	print "---Starting size 4---"
 #	PDFstats(data, "MotifSize4", motifSize=4, edgeSwap=True)
 #	print "---Starting size 5---"
