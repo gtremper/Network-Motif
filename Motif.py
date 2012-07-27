@@ -91,17 +91,22 @@ def genRandMats(num):
 		mats.append(x)
 	return mats
 
-def createKavoshInput(data, degree=10):
+def createKavoshInput(data, degree=10, isRand=None):
 	for key in data.keys():
 		for index, G in enumerate(data[key]):
 			if np.count_nonzero(G)<len(G)*degree:
 				continue
-			#calculate threshold
-			sortedWeights = np.sort(G,axis=None)
-			threshold = sortedWeights[-len(G)*degree-1]
-			graph = nx.DiGraph(G>threshold)
-			graph = nx.convert_node_labels_to_integers(graph,1)
-			with open('input/' +str(key)+'_'+str(index)+' .txt','wb') as f:
+			if isRand != None:
+				graph = isRand[key][index]
+				name = "RAND"+key[0]+key[1]
+			else:
+				#calculate threshold
+				sortedWeights = np.sort(G,axis=None)
+				threshold = sortedWeights[-len(G)*degree-1]
+				graph = nx.DiGraph(G>threshold)
+				graph = nx.convert_node_labels_to_integers(graph,1)
+				name = key[0]+key[1]
+			with open('input/' +str(name)+'_'+str(index)+'.txt','wb') as f:
 				f.write(str(len(graph)) + '\n')
 				nx.write_edgelist(graph,f,data=False)
 
@@ -495,21 +500,14 @@ def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	createKavoshInput(data, 10)
+	createKavoshInput(data, 10, None)
 	with open("SwapData10.pkl","rb") as f:
-		data = pickle.load(f)
-	createKavoshInput(data, 10)
-	#print "---Starting size 3---"
-	#PDFdiststats(data, "MotifSize3dist", motifSize=3, edgeSwap=True)
-#	print "---Starting size 4---"
-#	PDFstats(data, "MotifSize4", motifSize=4, edgeSwap=True)
-#	print "---Starting size 5---"
-#	PDFstats(data, "MotifSize5", motifSize=5, edgeSwap=True)
-#	print "---Starting size 6---"
-#	PDFstats(data, "MotifSize6", motifSize=6, edgeSwap=True)
+		data2 = pickle.load(f)
+	createKavoshInput(data, 10, data2)
+
 
 if __name__ == '__main__':
-	#main()
+	main()
 	#translateCache()
 	#simple()
-	buildCache()
+	#buildCache()
