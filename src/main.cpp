@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
 	//printf("Time Used for main graph: %f\n", main_time);
 	
 	//This function was added because we aren't using random graphs
-	g->outputMotifResults(subgraphCounter,output_directory);
+	g->outputMotifResults(subgraphCounter,output_directory,argv[2]);
 	
 	/*
 	subgraphCounterMain = subgraphCounter;
