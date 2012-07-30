@@ -504,10 +504,17 @@ def main():
 	with open("SwapData10.pkl","rb") as f:
 		data2 = pickle.load(f)
 	createKavoshInput(data, 10, data2)
+	
+def main2():
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+	
+	PDFdiststats(data, "DistStats4", True, 4, 10)
+	PDFdiststats(data, "DistStats5", True, 5, 10)
 
 
 if __name__ == '__main__':
-	main()
+	main2()
 	#translateCache()
 	#simple()
 	#buildCache()
