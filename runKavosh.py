@@ -1,3 +1,5 @@
+# ssh gtremper@192.150.186.207
+
 import os
 
 files = os.listdir("input")
