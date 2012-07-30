@@ -346,12 +346,12 @@ int main(int argc, char *argv[]) {
 	
 	//Hardcoded inputs so it runs faster
 	subgraphSize = atoi(argv[1]);
-	char filename[256];
-	sprintf(filename,"input/%s", argv[2]);
-	//char* input_filename = "result/OUTPUT.txt";
-	//char* output_directory = "result";
-	char* output_directory = "output";
-	char* input_filename = filename;
+	//char filename[256];
+	//sprintf(filename,"input/%s", argv[2]);
+	char* input_filename = "result/OUTPUT.txt";
+	char* output_directory = "result";
+	//char* output_directory = "output";
+	//char* input_filename = filename;
 	
 	subgraph = new int*[subgraphSize];
 	for (int i = 0; i < subgraphSize; i++)
@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
 	//printf("Time Used for main graph: %f\n", main_time);
 	
 	//This function was added because we aren't using random graphs
-	g->outputMotifResults(subgraphCounter,output_directory,argv[2]);
+	g->outputMotifResults(subgraphCounter,output_directory);
 	
 	/*
 	subgraphCounterMain = subgraphCounter;

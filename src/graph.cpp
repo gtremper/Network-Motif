@@ -439,11 +439,11 @@ void Graph::Extract() {
 
 /****************************************************************
 ****************************************************************/
-void Graph::outputMotifResults(unsigned long long subgraphCounter, char* path, char* filename){
+void Graph::outputMotifResults(unsigned long long subgraphCounter, char* path){
 	FILE * cm;
 	char file[256];
-	//sprintf(file, "%s/MotifCount.txt", path);
-	sprintf(file, "%s/%s", path,filename);
+	sprintf(file, "%s/MotifCount.txt", path);
+	//sprintf(file, "%s/%s", path,filename);
 	cm = fopen(file, "w+");
 	fprintf(cm, "%llu\n", subgraphCounter);
 	for(int i=0; i<T->get_leafnum(); i++){

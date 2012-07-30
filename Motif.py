@@ -173,6 +173,37 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 
 	return MotifData(motifs)
 
+def makeCache():
+	"""Convert raw motif data to json"""
+	
+	for rand in ('','RAND'):
+		for corr in ('corr','lcorr','lacorr'):
+			for typ in ('NL','MCI','AD','CONVERT'):
+				
+				motifs = []
+				for index,G in enumerate(graphs):
+					#Cull bad graphs
+					if np.count_nonzero(G)<len(G)*degree:
+						continue
+					
+					filename = rand + corr + '_' + str(index) + '.txt'
+    			
+					with open(filename,"rb") as f:
+						subgraphs = float(f.next())
+						data = np.loadtxt(f, ndmin=2)
+    			
+					#Append data for this graph
+					personMotifs = {}
+					for iD,total in data:
+						personMotifs[unicode(int(iD))] = total/subgraphs
+					motifs.append((int(subgraphs),personMotifs))
+				
+				key = (typ,corr)
+				cachename = rand + str(key) +'s6d10.json'
+				
+				json.dump(motifs, open('cache/'+cachename,'wb'), separators=(',',':'))
+
+
 def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 	"""Draws graph compairing average motif count between samples in the data"""
 	for corr in ('corr','lcorr','lacorr'):
