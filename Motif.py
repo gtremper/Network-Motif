@@ -261,8 +261,8 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	"""Output a latex pdf of motif stats"""
 	filename = "result/" + filename + ".tex"
 
-	if not edgeSwap:
-		motifsNLRAND = motifsMCIRAND = motifsADRAND = motifsCONVERTRAND = findMotifs(data,"rand",motifSize=motifSize,degree=degree)
+	#if not edgeSwap:
+	#	motifsNLRAND = motifsMCIRAND = motifsADRAND = motifsCONVERTRAND = findMotifs(data,"rand",motifSize=motifSize,degree=degree)
 
 	with open(filename,'wb') as f:
 		f.write(
@@ -299,11 +299,11 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 			allMotifs = list( motifsNL.keys
 							& motifsAD.keys
 							& motifsMCI.keys
-							& motifsCONVERT.keys
-							& motifsNLRAND.keys
-							& motifsMCIRAND.keys
-							& motifsADRAND.keys
-							& motifsCONVERTRAND.keys )
+							& motifsCONVERT.keys)
+							#& motifsNLRAND.keys
+							#& motifsMCIRAND.keys
+							#& motifsADRAND.keys
+							#& motifsCONVERTRAND.keys )
 							
 			allMotifs = heapq.nlargest(30, allMotifs, key = lambda x: motifsNL[x].mean())
 
@@ -319,11 +319,12 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 				c4 = stats.ttest_ind(mci, ad)
 				c5 = stats.ttest_ind(mci, conv)
 				c6 = stats.ttest_ind(ad, conv)
-				c7 = stats.ttest_ind(norm, motifsNLRAND[key])
-				c8 = stats.ttest_ind(mci, motifsMCIRAND[key])
-				c9 = stats.ttest_ind(ad, motifsADRAND[key])
-				c10 = stats.ttest_ind(conv, motifsCONVERTRAND[key])
-				motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
+				#c7 = stats.ttest_ind(norm, motifsNLRAND[key])
+				#c8 = stats.ttest_ind(mci, motifsMCIRAND[key])
+				#c9 = stats.ttest_ind(ad, motifsADRAND[key])
+				#c10 = stats.ttest_ind(conv, motifsCONVERTRAND[key])
+				#motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
+				motifStats.append((key,c1,c2,c3,c4,c5,c6))
 
 			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
 
@@ -332,10 +333,12 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 			"\\begin{adjustwidth}{-1.5in}{-1.5in} "
 			"\\caption{Motif T-test results from "+corr+" data with using edge swap}\n"
 			"\\centering\n"
-			"\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
+			#"\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
+			"\\begin{tabular}{|c|c|c|c|c|c|c|}\n"
 			"\\hline\n"
 			"\\rowcolor[gray]{0.85}\n"
-			"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
+			#"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
+			"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv \\\\ \\hline\n"
 			)
 			for stat in motifStats:
 				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
@@ -765,6 +768,93 @@ def simple():
 		data = pickle.load(f)
 	findMotifs(data, ('AD','corr'), motifSize=3)
 
+def compareLen():
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+	
+	
+	filename = "result/size6lengths.tex"
+	with open(filename,'wb') as f:
+		f.write(
+		"\\documentclass{article}\n"
+		"\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl,chngpage}\n"
+		"\\definecolor{yellow}{RGB}{255,255,70}\n"
+		"\\definecolor{orange}{RGB}{255,165,70}\n"
+		"\\definecolor{red}{RGB}{255,70,70}\n"
+		"\\title{Motif Data}\n"
+		"\\author{Graham Tremper}\n"
+		"\\date{}\n"
+		"\\fancyhead{}\n"
+		"\\begin{document}\n"
+		"\\begin{table}[t]\n"
+		"\\begin{adjustwidth}{-2in}{-2in} "
+		"\\caption{T-test comparing the number of size 6 motifs found between groups}\n"
+		"\\centering\n"
+		"\\begin{tabular}{|c|c|c|c|c|c|c|}\n"
+		"\\hline\n"
+		"\\rowcolor[gray]{0.85}\n"
+		"Corr & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv \\\\ \\hline\n"
+		)
+	
+		for corr in ('corr','lcorr','lacorr'):
+			motifs = findMotifs(data,('NL',corr),motifSize=6)
+			nlLengths = []
+			for pat in motifs.iterPatients():
+				nlLengths.append(len(pat))
+			nlLengths = np.array(nlLengths)
+			
+			motifs = findMotifs(data,('MCI',corr),motifSize=6)
+			mciLengths = []
+			for pat in motifs.iterPatients():
+				mciLengths.append(len(pat))
+			mciLengths = np.array(mciLengths)
+			
+			motifs = findMotifs(data,('AD',corr),motifSize=6)
+			adLengths = []
+			for pat in motifs.iterPatients():
+				adLengths.append(len(pat))
+			adLengths = np.array(adLengths)
+			
+			motifs = findMotifs(data,('CONVERT',corr),motifSize=6)
+			convertLengths = []
+			for pat in motifs.iterPatients():
+				convertLengths.append(len(pat))
+			convertLengths = np.array(convertLengths)
+			
+			statistics = []
+			statistics.append(stats.ttest_ind(nlLengths, mciLengths))
+			statistics.append(stats.ttest_ind(nlLengths, adLengths))
+			statistics.append(stats.ttest_ind(nlLengths, convertLengths))
+			statistics.append(stats.ttest_ind(mciLengths, adLengths))
+			statistics.append(stats.ttest_ind(mciLengths, convertLengths))
+			statistics.append(stats.ttest_ind(adLengths, convertLengths))
+			
+			f.write( corr + " \\cellcolor[gray]{0.95}")
+			for sign,col in statistics:
+				cell = " & {0:.3}".format(col)
+				if sign > 0:
+					cell += '(+)'
+				else:
+					cell += '(-)'
+    	
+				if col <= 0.01:
+					cell += " \\cellcolor{red} "
+				elif col <= 0.05:
+					cell += " \\cellcolor{orange}"
+				elif col <= 0.1:
+					cell += " \\cellcolor{yellow}"
+				f.write(cell)
+			f.write("\\\\ \\hline\n")
+    	
+		f.write(
+		"\\end{tabular}\n"
+		"\\end{adjustwidth}"
+		"\\end{table}\n"
+		"\\end{document}\n"
+		)
+	os.system("pdflatex -output-directory result " + filename)
+	os.system("rm result/*.log result/*.aux")
+
 def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
@@ -784,7 +874,8 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+	compareLen()
+	#main()
 	#translateCache()
 	#simple()
 	#buildCache()
