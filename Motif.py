@@ -56,6 +56,9 @@ class MotifData:
 
 	def getPatient(self, pat):
 		return self.data[pat]
+	
+	def iterPatients(self):
+		return iter(self.data)
 
 	def getSubgraphs(self, pat):
 		return self.subgraphs[pat]	
@@ -173,35 +176,41 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None):
 
 	return MotifData(motifs)
 
-def makeCache():
+def makeCache(data):
 	"""Convert raw motif data to json"""
 	
 	for rand in ('','RAND'):
 		for corr in ('corr','lcorr','lacorr'):
 			for typ in ('NL','MCI','AD','CONVERT'):
+				key = (typ,corr)
+				print rand + str(key)
 				
+				cachename = rand + str(key) +'s6d10.json'
+				if os.path.exists('newcache/'+cachename):
+					continue
+				
+				graphs = data[key]
 				motifs = []
 				for index,G in enumerate(graphs):
+					print index
 					#Cull bad graphs
-					if np.count_nonzero(G)<len(G)*degree:
+					if np.count_nonzero(G)<len(G)*10:
 						continue
 					
-					filename = rand + corr + '_' + str(index) + '.txt'
+					filename = rand + typ + corr + '_' + str(index) + '.txt'
     			
-					with open(filename,"rb") as f:
+					with open("output/"+filename,"rb") as f:
 						subgraphs = float(f.next())
-						data = np.loadtxt(f, ndmin=2)
+						motifData = np.loadtxt(f, ndmin=2)
     			
 					#Append data for this graph
 					personMotifs = {}
-					for iD,total in data:
+					for iD,total in motifData:
 						personMotifs[unicode(int(iD))] = total/subgraphs
 					motifs.append((int(subgraphs),personMotifs))
 				
-				key = (typ,corr)
-				cachename = rand + str(key) +'s6d10.json'
+				json.dump(motifs, open('newcache/'+cachename,'wb'), separators=(',',':'))
 				
-				json.dump(motifs, open('cache/'+cachename,'wb'), separators=(',',':'))
 
 
 def plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
@@ -356,6 +365,235 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.log result/*.aux")
+
+def createfakeGroups(data, motifSize):
+	newdata ={}
+	for corr in	 ('corr','lcorr','lacorr'):
+		newdata[('NL', corr)] = []
+		newdata[('AD', corr)] = []
+		newdata[('MCI', corr)] = []
+		newdata[('CONVERT', corr)] = []
+		
+		nlData = list(findMotifs(data,('NL',corr), motifSize=motifSize).data)
+		adData = list(findMotifs(data,('AD',corr), motifSize=motifSize).data)
+		mciData = list(findMotifs(data,('MCI',corr), motifSize=motifSize).data)
+		convertData = list(findMotifs(data,('CONVERT',corr), motifSize=motifSize).data)
+
+		adlen = len(adData) 
+		nllen = len(nlData)
+		mcilen = len(mciData)
+		convertlen = len(convertData)
+		total = adlen + nllen + mcilen + convertlen
+
+		myList = [nllen, adlen, mcilen, convertlen]
+		for i in xrange(4):
+			n = int(float(myList[i])/float(total) * nllen)
+			for j in xrange(n):
+				if i == 0:
+					g = nlData.pop(random.randrange(len(nlData)))
+					newdata[('NL', corr)].append(g)
+				if i == 1:
+					g = adData.pop(random.randrange(len(adData)))
+					newdata[('NL', corr)].append(g)
+				if i == 2:
+					g = mciData.pop(random.randrange(len(mciData)))
+					newdata[('NL', corr)].append(g)
+				if i == 3:
+					g = convertData.pop(random.randrange(len(convertData)))
+					newdata[('NL', corr)].append(g)
+
+		for i in xrange(4):
+			n = int(float(myList[i])/float(total) * adlen)
+			for j in xrange(n):
+				if i == 0:
+					g = nlData.pop(random.randrange(len(nlData)))
+					newdata[('AD', corr)].append(g)
+				if i == 1:
+					g = adData.pop(random.randrange(len(adData)))
+					newdata[('AD', corr)].append(g)
+				if i == 2:
+					g = mciData.pop(random.randrange(len(mciData)))
+					newdata[('AD', corr)].append(g)
+				if i == 3:
+					g = convertData.pop(random.randrange(len(convertData)))
+					newdata[('AD', corr)].append(g)
+
+		for i in xrange(4):
+			n = int(float(myList[i])/float(total) * mcilen)
+			for j in xrange(n):
+				if i == 0:
+					g = nlData.pop(random.randrange(len(nlData)))
+					newdata[('MCI', corr)].append(g)
+				if i == 1:
+					g = adData.pop(random.randrange(len(adData)))
+					newdata[('MCI', corr)].append(g)
+				if i == 2:
+					g = mciData.pop(random.randrange(len(mciData)))
+					newdata[('MCI', corr)].append(g)
+				if i == 3:
+					g = convertData.pop(random.randrange(len(convertData)))
+					newdata[('MCI', corr)].append(g)
+
+		for i in xrange(4):
+			n = int(float(myList[i])/float(total) * convertlen)
+			for j in xrange(n):
+				if i == 0:
+					g = nlData.pop(random.randrange(len(nlData)))
+					newdata[('CONVERT', corr)].append(g)
+				if i == 1:
+					g = adData.pop(random.randrange(len(adData)))
+					newdata[('CONVERT', corr)].append(g)
+				if i == 2:
+					g = mciData.pop(random.randrange(len(mciData)))
+					newdata[('CONVERT', corr)].append(g)
+				if i == 3:
+					g = convertData.pop(random.randrange(len(convertData)))
+					newdata[('CONVERT', corr)].append(g)
+
+		leftovers = nlData + adData + mciData + convertData
+		while len(newdata['NL', corr]) < nllen:
+			g = leftovers.pop(random.randrange(len(leftovers)))
+			newdata[('NL', corr)].append(g)
+
+		while len(newdata['AD', corr]) < adlen:
+			g = leftovers.pop(random.randrange(len(leftovers)))
+			newdata[('AD', corr)].append(g)
+
+		while len(newdata['MCI', corr]) < mcilen:
+			g = leftovers.pop(random.randrange(len(leftovers)))
+			newdata[('MCI', corr)].append(g)
+
+		while len(newdata['CONVERT', corr]) < convertlen:
+			g = leftovers.pop(random.randrange(len(leftovers)))
+			newdata[('CONVERT', corr)].append(g)
+
+	return newdata
+
+def PDFstatsShuf(data, filename, motifSize=3, degree=10):
+	"""Output a latex pdf of motif stats"""
+	filename = "result/" + filename + ".tex"
+	shufData = createfakeGroups(data, motifSize=motifSize)
+
+	with open(filename,'wb') as f:
+		f.write(
+		"\\documentclass{article}\n"
+		"\\usepackage{amsmath,fullpage,graphicx,fancyhdr,xcolor,colortbl,chngpage}\n"
+		"\\usepackage[landscape]{geometry}"
+		"\\definecolor{yellow}{RGB}{255,255,70}\n"
+		"\\definecolor{orange}{RGB}{255,165,70}\n"
+		"\\definecolor{red}{RGB}{255,70,70}\n"
+		"\\title{Motif Data}\n"
+		"\\author{Graham Tremper}\n"
+		"\\date{}\n"
+		"\\fancyhead{}\n"
+		"\\begin{document}\n"
+		)
+
+		statistics = {}		
+		for corr in ('corr','lcorr','lacorr'):
+			print "Starting " + corr +"..."
+			motifsNL = findMotifs(data, ('NL',corr), motifSize = motifSize, degree=degree)
+			motifsMCI = findMotifs(data, ('MCI',corr), motifSize = motifSize, degree=degree)
+			motifsAD = findMotifs(data, ('AD',corr), motifSize = motifSize, degree=degree)
+			motifsCONVERT = findMotifs(data, ('CONVERT',corr), motifSize = motifSize, degree=degree)
+
+			motifsNLRAND = shufData[('NL',corr)]
+			motifsMCIRAND = shufData[('MCI',corr)]
+			motifsADRAND = shufData[('AD',corr)]
+			motifsCONVERTRAND = shufData[('CONVERT',corr)]
+			
+			NLRANDkeys = set()
+			for dic in motifsNLRAND:
+				#print dic.keys()
+				NLRANDkeys.update(set(dic.keys()))
+			#print len(NLRANDkeys)
+			
+			MCIRANDkeys = set()
+			for dic in motifsMCIRAND:
+				MCIRANDkeys.update(set(dic.keys()))
+			#print len(MCIRANDkeys)
+			
+			ADRANDkeys = set()
+			for dic in motifsADRAND:
+				ADRANDkeys.update(set(dic.keys()))
+			#print len(ADRANDkeys)
+			
+			CONVERTRANDkeys = set()
+			for dic in motifsCONVERTRAND:
+				CONVERTRANDkeys.update(set(dic.keys()))
+			#print len(CONVERTRANDkeys)
+
+			allMotifs = list( motifsNL.keys
+							& motifsAD.keys
+							& motifsMCI.keys
+							& motifsCONVERT.keys
+							& NLRANDkeys
+							& MCIRANDkeys
+							& ADRANDkeys
+							& CONVERTRANDkeys )
+
+			allMotifs = heapq.nlargest(30, allMotifs, key = lambda x: motifsNL[x].mean())
+
+			motifStats = []
+			for key in allMotifs[:30]:
+				norm = motifsNL[key]
+				mci = motifsMCI[key]
+				ad = motifsAD[key]
+				conv = motifsCONVERT[key]
+				c1 = stats.ttest_ind(norm, mci)
+				c2 = stats.ttest_ind(norm, ad)
+				c3 = stats.ttest_ind(norm, conv)
+				c4 = stats.ttest_ind(mci, ad)
+				c5 = stats.ttest_ind(mci, conv)
+				c6 = stats.ttest_ind(ad, conv)
+				c7 = stats.ttest_ind(norm, [d[key] if key in d else 0. for d in motifsNLRAND])
+				c8 = stats.ttest_ind(mci, [d[key] if key in d else 0. for d in motifsMCIRAND])
+				c9 = stats.ttest_ind(ad, [d[key] if key in d else 0. for d in motifsADRAND])
+				c10 = stats.ttest_ind(conv, [d[key] if key in d else 0. for d in motifsCONVERTRAND])
+				motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
+
+			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
+
+			f.write(
+			"\\begin{table}[t]\n"
+			"\\begin{adjustwidth}{-1.5in}{-1.5in} "
+			"\\caption{Motif T-test results from "+corr+" data with using edge swap}\n"
+			"\\centering\n"
+			"\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
+			"\\hline\n"
+			"\\rowcolor[gray]{0.85}\n"
+			"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
+			)
+			for stat in motifStats:
+				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
+				for sign,col in stat[1:]:
+					cell = " & {0:.3}".format(col)
+					if sign > 0:
+						cell += '(+)'
+					else:
+						cell += '(-)'
+
+					if col <= 0.01:
+						cell += " \\cellcolor{red} "
+					elif col <= 0.05:
+						cell += " \\cellcolor{orange}"
+					elif col <= 0.1:
+						cell += " \\cellcolor{yellow}"
+					f.write(cell)
+				f.write("\\\\ \\hline\n")
+
+			f.write(
+			"\\end{tabular}\n"
+			"\\end{adjustwidth}"
+			"\\end{table}\n"
+			)
+
+		f.write("\\end{document}\n")
+
+	os.system("pdflatex -output-directory result " + filename)
+	os.system("rm result/*.log result/*.aux")
+
+
 	
 def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	"""Output a latex pdf of motif stats"""
@@ -530,11 +768,19 @@ def simple():
 def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
+		
+	makeCache(data)
 	
-	createKavoshInput(data, 10, None)
-	with open("SwapData10.pkl","rb") as f:
-		data2 = pickle.load(f)
-	createKavoshInput(data, 10, data2)
+	#print "Size5"	
+	#PDFstatsShuf(data, 'Shuffle5', motifSize=5)
+	#PDFstats(data,"Swap3",True,3)
+	#PDFstats(data,"Swap4",True,4)
+			
+	
+	#createKavoshInput(data, 10, None)
+	#with open("SwapData10.pkl","rb") as f:
+#		data2 = pickle.load(f)
+#	createKavoshInput(data, 10, data2)
 
 
 if __name__ == '__main__':
