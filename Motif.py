@@ -540,9 +540,7 @@ def main2():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
 	
-	PDFdiststats(data, "DistStats4", True, 4, 10)
-	PDFdiststats(data, "DistStats5", True, 5, 10)
-
+	PDFdiststats(data, "DistStats4", True, 6, 10)
 
 if __name__ == '__main__':
 	main2()
