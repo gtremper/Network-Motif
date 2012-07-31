@@ -769,7 +769,7 @@ def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
 		
-	makeCache(data)
+	PDFstats(data, "Size6", edgeSwap=False, motifSize=6, degree=10)
 	
 	#print "Size5"	
 	#PDFstatsShuf(data, 'Shuffle5', motifSize=5)
