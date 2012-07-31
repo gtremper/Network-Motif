@@ -261,8 +261,8 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	"""Output a latex pdf of motif stats"""
 	filename = "result/" + filename + ".tex"
 
-	#if not edgeSwap:
-	#	motifsNLRAND = motifsMCIRAND = motifsADRAND = motifsCONVERTRAND = findMotifs(data,"rand",motifSize=motifSize,degree=degree)
+	if not edgeSwap:
+		motifsNLRAND = motifsMCIRAND = motifsADRAND = motifsCONVERTRAND = findMotifs(data,"rand",motifSize=motifSize,degree=degree)
 
 	with open(filename,'wb') as f:
 		f.write(
@@ -300,10 +300,10 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 							& motifsAD.keys
 							& motifsMCI.keys
 							& motifsCONVERT.keys)
-							#& motifsNLRAND.keys
-							#& motifsMCIRAND.keys
-							#& motifsADRAND.keys
-							#& motifsCONVERTRAND.keys )
+							& motifsNLRAND.keys
+							& motifsMCIRAND.keys
+							& motifsADRAND.keys
+							& motifsCONVERTRAND.keys )
 							
 			allMotifs = heapq.nlargest(30, allMotifs, key = lambda x: motifsNL[x].mean())
 
@@ -319,12 +319,12 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 				c4 = stats.ttest_ind(mci, ad)
 				c5 = stats.ttest_ind(mci, conv)
 				c6 = stats.ttest_ind(ad, conv)
-				#c7 = stats.ttest_ind(norm, motifsNLRAND[key])
-				#c8 = stats.ttest_ind(mci, motifsMCIRAND[key])
-				#c9 = stats.ttest_ind(ad, motifsADRAND[key])
-				#c10 = stats.ttest_ind(conv, motifsCONVERTRAND[key])
-				#motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
-				motifStats.append((key,c1,c2,c3,c4,c5,c6))
+				c7 = stats.ttest_ind(norm, motifsNLRAND[key])
+				c8 = stats.ttest_ind(mci, motifsMCIRAND[key])
+				c9 = stats.ttest_ind(ad, motifsADRAND[key])
+				c10 = stats.ttest_ind(conv, motifsCONVERTRAND[key])
+				motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
+				#motifStats.append((key,c1,c2,c3,c4,c5,c6))
 
 			motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
 
@@ -333,12 +333,12 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 			"\\begin{adjustwidth}{-1.5in}{-1.5in} "
 			"\\caption{Motif T-test results from "+corr+" data with using edge swap}\n"
 			"\\centering\n"
-			#"\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
-			"\\begin{tabular}{|c|c|c|c|c|c|c|}\n"
+			"\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
+			#"\\begin{tabular}{|c|c|c|c|c|c|c|}\n"
 			"\\hline\n"
 			"\\rowcolor[gray]{0.85}\n"
-			#"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
-			"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv \\\\ \\hline\n"
+			"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
+			#"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv \\\\ \\hline\n"
 			)
 			for stat in motifStats:
 				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
@@ -865,17 +865,22 @@ def main():
 	#PDFstatsShuf(data, 'Shuffle5', motifSize=5)
 	#PDFstats(data,"Swap3",True,3)
 	#PDFstats(data,"Swap4",True,4)
-			
+	createKavoshInput(data, 10, None)
+	with open("SwapData10.pkl","rb") as f:
+		data2 = pickle.load(f)
+	createKavoshInput(data, 10, data2)
 	
-	#createKavoshInput(data, 10, None)
-	#with open("SwapData10.pkl","rb") as f:
-#		data2 = pickle.load(f)
-#	createKavoshInput(data, 10, data2)
+def main2():
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+	
+	PDFdiststats(data, "DistStats4", True, 6, 10)
 
 
 if __name__ == '__main__':
 	compareLen()
 	#main()
+	#main2()
 	#translateCache()
 	#simple()
 	#buildCache()
