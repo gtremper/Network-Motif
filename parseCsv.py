@@ -90,7 +90,7 @@ def createFinalData(undirected = False, filename="aznorbert_corrsd_new.pkl"):
 	pdd = parse('outVolumes2.csv')
 	for patientname, patientdata in pdd.iteritems():
 		patienttype = patientdata[0]
-		if patienttype in ['NL', 'AD', 'MCI', 'MCI to AD']:
+		if patienttype in ('NL', 'AD', 'MCI', 'MCI to AD'):
 			if patienttype == 'MCI to AD':
 				patienttype = 'CONVERT'
 		else:
