@@ -37,8 +37,14 @@ plotMotifGraphs(data,motifSize=3,degree=10,numofmotifs=10,usetotal=False):
 
 
 def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
-	Creates a latex document of the data
+	Creates a latex document of the T-test data for the motif distribution probabilities
+	"filename" name of outputfile
+	"edgeSwap" is whether to use edge swapped graphs for the RAND group.
+	"motifSize" is the size of the motif you want to calculate.
+	"degree" is the average degree you want to threshold the graph with.
 
+def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
+	Same as above except it creates a latex document of the T-test data
 
 
 Final thoughts

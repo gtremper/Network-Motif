@@ -421,7 +421,7 @@ def createfakeGroups(data, motifSize):
 	return newdata
 
 def PDFstatsShuf(data, filename, motifSize=3, degree=10):
-	"""Output a latex pdf of motif stats"""
+	"""Output a latex pdf of motif stats with the patient groups shuffled"""
 	filename = "result/" + filename + ".tex"
 	shufData = createfakeGroups(data, motifSize=motifSize)
 
@@ -540,7 +540,7 @@ def PDFstatsShuf(data, filename, motifSize=3, degree=10):
 	os.system("rm result/*.log result/*.aux")
 
 def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
-	"""Output a latex pdf of motif stats"""
+	"""Output a latex pdf of motif distribution (entrophy, gini coeff, fatness) stats"""
 	filename = "result/" + filename + ".tex"
 
 	if not edgeSwap:
@@ -638,8 +638,12 @@ def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 
 	os.system("pdflatex -output-directory result " + filename)
 	os.system("rm result/*.log result/*.aux")
+	
+"""""""""""""""""HELPER FUNCTIONS"""""""""""""""""""""
+	
 
 def diststats(graphdict):
+	""" Helper Function to calculate entrophy, gini coeff, fatness"""
 	listofentrophy = []
 	listofgini = []
 	listoffatness = []
