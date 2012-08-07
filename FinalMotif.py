@@ -17,10 +17,11 @@ import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as stats
-import graph_helper as gh
 from scipy.sparse import dok_matrix
 from itertools import izip
+from itertools import repeat
 
+useCache=True 
 
 class MotifData:
 	"Class containing motif data for a set of graphs"
@@ -69,9 +70,51 @@ class MotifData:
 	def getSubgraphs(self, pat):
 		return self.subgraphs[pat]
 
+def makeSwapData(degree=10):
+	"""generates edgeswapped graph pickle file"""
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+
+	swapData = {}
+
+	for key, graphs in data.iteritems():
+		print key
+		keyData = []
+		for i,G in enumerate(graphs):
+			print i
+			sortedWeights = np.sort(G,axis=None)
+			threshold = sortedWeights[-len(G)*degree-1]
+
+			graph = nx.DiGraph(G>threshold)
+			diff = randomize_graph(graph, 2500)
+			keyData.append(graph)
+		swapData[key] = keyData
+	
+	with open("SwapData"+str(degree)+".pkl",'wb') as f:
+		pickle.dump(swapData,f)
+		
+def buildCache():
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+	
+	#with open("SwapData10.pkl","rb") as pic:
+	#	randGraphs = pickle.load(pic)
+		
+	for corr in ("corr","lcorr","lacorr"):
+		for ty in ("AD","MCI","NL","CONVERT"):
+			print corr + ty
+			findMotifs(data, (ty,corr), motifSize=6)
 
 def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None, useCache=True):
 	"""Main finding motifs routine"""
+	def genRandMats(num):
+		"""Generate random adjacency matricies"""
+		mats = []
+		for i in xrange(num):
+			x = np.random.rand(88,88)
+			x -= np.diag(np.diag(x))
+			mats.append(x)
+		return mats
 
 	#generate random matricies
 	if key == "rand":
@@ -640,6 +683,51 @@ def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	os.system("rm result/*.log result/*.aux")
 	
 """""""""""""""""HELPER FUNCTIONS"""""""""""""""""""""
+
+def randomize_graph(G, numpasses):
+	"Perfoms numpasses edge swaps in place on G"
+	for i in xrange(numpasses):
+		success = False
+		while not success:
+			edges = G.edges()
+			edgeSet = set(edges)
+			edge1 = random.choice(edges)
+			a,b = edge1
+			random.shuffle(edges)
+			for edge2 in edges:
+				c,d = edge2
+				if (a, d) not in edgeSet and (c, b) not in edgeSet:
+					success = True
+					break
+		G.add_edge(a, d)
+		G.add_edge(c, b)
+		G.remove_edge(a, b)
+		G.remove_edge(c, d)
+
+def randomize_graph_count(G, numpasses):
+	"Performs numpasses edgeswaps and returns diff from original"
+	original = nx.to_numpy_matrix(G)
+	diff = [0]
+	for i in xrange(numpasses):
+		success = False
+		while not success:
+			edges = G.edges()
+			edgeSet = set(edges)
+			edge1 = random.choice(edges)
+			a,b = edge1
+			random.shuffle(edges)
+			for edge2 in edges:
+				c,d = edge2
+				if (a, d) not in edgeSet and (c, b) not in edgeSet:
+					success = True
+					break
+		G.add_edge(a, d)
+		G.add_edge(c, b)
+		G.remove_edge(a, b)
+		G.remove_edge(c, d)
+		newGraph = nx.to_numpy_matrix(G)
+		diff.append( np.sum(abs(original-newGraph))/2 )
+	return np.array(diff)
 	
 
 def diststats(graphdict):
@@ -674,7 +762,7 @@ def findfatness(x):
 
 
 def main():
-	pass
+	makeSwapData(degree=10)
 
 
 if __name__ == '__main__':
