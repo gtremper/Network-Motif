@@ -25,7 +25,7 @@ class MotifData:
 	"Class containing motif data for a set of graphs"
 
 	def __init__(self, data):
-		self.subgraphs, self.data = data
+		self.subgraphs, self.data = zip(*data)
 		allkeys = set()
 		for dic in self.data:
 			allkeys.update(set(dic.keys()))
@@ -109,27 +109,23 @@ def buildCache(motifSize, degree):
 
 def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None, useCache=True):
 	"""Main finding motifs routine"""
-	def genRandMats(num):
+
+	if key == "rand":
 		"""Generate random adjacency matricies"""
-		mats = []
-		for i in xrange(num):
+		graphs = []
+		for i in xrange(100):
 			x = np.random.rand(88,88)
 			x -= np.diag(np.diag(x))
-			mats.append(x)
-		return mats
-
-	#generate random matricies
-	if key == "rand":
-		graphs = genRandMats(100)
+			graphs.append(x)
 	else:
 		graphs = data[key]
 
 	#Check cache
 	filename = "" if randGraphs is None else "RAND"
 	filename += str(key)+'s'+str(int(motifSize))+'d'+str(int(degree))+".json"
-	if os.path.exists('MotifCache/'+filename) and useCache:
+	if os.path.exists('cache/'+filename) and useCache:
 		print "in cache"
-		cachedata = json.load( open('MotifCache/'+filename,"rb"))
+		cachedata = json.load( open('cache/'+filename,"rb"))
 		print filename
 		return MotifData(cachedata)
 
@@ -175,10 +171,10 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None, useCache=True):
 
 	#add motifs to cache
 	if useCache:
-		if not os.path.isdir('MotifCache'):
-			os.makedirs('MotifCache')
+		if not os.path.isdir('cache'):
+			os.makedirs('cache')
 			
-		json.dump(motifs, open('MotifCache/'+filename,'wb'), separators=(',',':'))
+		json.dump(motifs, open('cache/'+filename,'wb'), separators=(',',':'))
 
 	return MotifData(motifs)
 
