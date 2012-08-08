@@ -765,8 +765,9 @@ def findfatness(x):
 
 
 def main():
-#	makeSwapData(10)
-	buildCache(3, 10)
+	with open("aznorbert_corrsd_new.pkl","rb") as f:
+		data = pickle.load(f)
+	findMotifs(data,('AD', 'corr'),motifSize=3,degree=10,randGraphs=None, useCache=True)
 
 
 if __name__ == '__main__':

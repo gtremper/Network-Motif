@@ -12,7 +12,7 @@ makeSwapData(degree=10):
 	This crates a pkl file that contains the graphs of the original data after undergoing edge swapping
 	"degree" is the average degree you want to threshold the graph with.
 	
-buildCache():
+buildCache(motifSize, degree):
 	This function builds the cache of both original graphs and edge-swapped ones for faster processing in future runs of findMotifs
 	"motifSize" is the size of the motif you want to calculate.
 	"degree" is the average degree you want to threshold the graph with.
