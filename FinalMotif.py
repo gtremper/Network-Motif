@@ -21,8 +21,6 @@ from scipy.sparse import dok_matrix
 from itertools import izip
 from itertools import repeat
 
-useCache=True 
-
 class MotifData:
 	"Class containing motif data for a set of graphs"
 
@@ -78,10 +76,10 @@ def makeSwapData(degree=10):
 	swapData = {}
 
 	for key, graphs in data.iteritems():
-		print key
+		print "Current Group: " + str(key)
 		keyData = []
 		for i,G in enumerate(graphs):
-			print i
+			print "Graph:", i
 			sortedWeights = np.sort(G,axis=None)
 			threshold = sortedWeights[-len(G)*degree-1]
 
@@ -93,17 +91,21 @@ def makeSwapData(degree=10):
 	with open("SwapData"+str(degree)+".pkl",'wb') as f:
 		pickle.dump(swapData,f)
 		
-def buildCache():
+def buildCache(motifSize, degree):
+	"""builds cache for graphs (both edge-swapped and original)"""
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
-	
-	#with open("SwapData10.pkl","rb") as pic:
-	#	randGraphs = pickle.load(pic)
+		
+	with open("SwapData" + str(degree) + ".pkl","rb") as pic:
+		randGraphs = pickle.load(pic)
 		
 	for corr in ("corr","lcorr","lacorr"):
 		for ty in ("AD","MCI","NL","CONVERT"):
-			print corr + ty
-			findMotifs(data, (ty,corr), motifSize=6)
+			print (corr, ty)
+			findMotifs(data, (ty,corr), motifSize, degree, randGraphs)
+			findMotifs(data, (ty,corr), motifSize, degree)
+	
+	
 
 def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None, useCache=True):
 	"""Main finding motifs routine"""
@@ -128,6 +130,7 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None, useCache=True):
 	if os.path.exists('MotifCache/'+filename) and useCache:
 		print "in cache"
 		cachedata = json.load( open('MotifCache/'+filename,"rb"))
+		print filename
 		return MotifData(cachedata)
 
 	motifs = []
@@ -144,7 +147,7 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None, useCache=True):
 		threshold = sortedWeights[-len(G)*degree-1]
 		#Print progress
 		sys.stdout.write("\rMotif Finding Progress: "+str(index)+numstring)
-		sys.stdout.write(" Threshold: "+str(threshold))
+		sys.stdout.write(" Threshold: "+str(threshold) +'\n')
 		sys.stdout.flush()
 
 		#Output graph to txt file
@@ -762,7 +765,8 @@ def findfatness(x):
 
 
 def main():
-	makeSwapData(degree=10)
+#	makeSwapData(10)
+	buildCache(3, 10)
 
 
 if __name__ == '__main__':

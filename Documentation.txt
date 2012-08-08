@@ -2,8 +2,7 @@ This is the documentation for the FinalMotif.py module and the parseCsv.py modul
 
 FinalMotif.py Functions:
 
-Overview
-FinalMotif.py is essentially a wrapper for a simple C++ program (Kavosh) for calculating the total number of motifs in a given graph. Kavosh takes in an edge list of the graph and ouputs a txt file with the number of each motif found. We used cPickle to store the raw data as a python dictionary. Since the runtime of this code increases exponentially with motif size, I created a cache directory that stores the motif results in the json format.
+Overview: FinalMotif.py is essentially a wrapper for a simple C++ program (Kavosh) for calculating the total number of motifs in a given graph. Kavosh takes in an edge list of the graph and ouputs a txt file with the number of each motif found. We used cPickle to store the raw data as a python dictionary. Since the runtime of this code increases exponentially with motif size, I created a cache directory that stores the motif results in the json format.
 
 MotifData:
 	This class contains the motif data for a set of graphs. It is the returned value for the findMotifs() function. It is basically a wrapper for a list of dictionaries. Each element in the list is represents 1 patient and the dictionary maps motif ID to the number of that motif found in the
@@ -11,6 +10,11 @@ graph. It contains various access functions to iterate through or retrieve vario
 
 makeSwapData(degree=10):
 	This crates a pkl file that contains the graphs of the original data after undergoing edge swapping
+	"degree" is the average degree you want to threshold the graph with.
+	
+buildCache():
+	This function builds the cache of both original graphs and edge-swapped ones for faster processing in future runs of findMotifs
+	"motifSize" is the size of the motif you want to calculate.
 	"degree" is the average degree you want to threshold the graph with.
 
 findMotifs(data,key,motifSize=3,degree=10,randGraphs=None, useCache=True):
@@ -43,3 +47,18 @@ PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 
 PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 	Same as above except it creates a latex document of the T-test data
+
+parseCsv.py Functions:
+
+Overview: parseCsv.py allows you parse csv files into the pkl dictionaries that FinalMotif.py uses.
+
+createFinalDataNew(filename):
+	This function creates a pkl dictionary for patient groups and types for the new MS csv files.
+	"filename" name of outputfile
+	
+createData():
+	This function creates a pkl dictionary for patient groups and types for the alzheimers csv files.
+	
+createFinalData(filename):
+	Same as above function, except in a different format.
+	"filename" name of outputfile
