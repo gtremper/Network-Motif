@@ -79,7 +79,7 @@ def makeSwapData(degree=10):
 		print "Current Group: " + str(key)
 		keyData = []
 		for i,G in enumerate(graphs):
-			print "Graph:", i
+			print "Edge-Swapping Graph:", i
 			sortedWeights = np.sort(G,axis=None)
 			threshold = sortedWeights[-len(G)*degree-1]
 
@@ -101,7 +101,7 @@ def buildCache(motifSize, degree):
 		
 	for corr in ("corr","lcorr","lacorr"):
 		for ty in ("AD","MCI","NL","CONVERT"):
-			print (corr, ty)
+			print "Building Cache for " + str((corr, ty))
 			findMotifs(data, (ty,corr), motifSize, degree, randGraphs)
 			findMotifs(data, (ty,corr), motifSize, degree)
 	
