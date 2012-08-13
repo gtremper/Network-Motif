@@ -622,13 +622,14 @@ def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 			CONVERTd = diststats(motifsCONVERT)
 			if edgeSwap:
 				motifsNLRAND = findMotifs(data, ('NL',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
-				NLRANDd = diststats(motifsNLRAND)
 				motifsMCIRAND = findMotifs(data, ('MCI',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
-				MCIRANDd = diststats(motifsMCIRAND)
 				motifsADRAND = findMotifs(data, ('AD',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
-				ADRANDd = diststats(motifsADRAND)
 				motifsCONVERTRAND = findMotifs(data, ('CONVERT',corr), motifSize = motifSize, degree=degree, randGraphs=randGraphs)
-				CONVERTRANDd = diststats(motifsCONVERTRAND)
+
+			ADRANDd = diststats(motifsADRAND)
+			MCIRANDd = diststats(motifsMCIRAND)
+			CONVERTRANDd = diststats(motifsCONVERTRAND)
+			NLRANDd = diststats(motifsNLRAND)
 
 			motifStats = []
 			for pos,key in enumerate(('Entrophy', 'Gini Coeff', 'Fatness')):
