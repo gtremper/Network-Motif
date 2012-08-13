@@ -5,8 +5,7 @@ FinalMotif.py Functions:
 Overview: FinalMotif.py is essentially a wrapper for a simple C++ program (Kavosh) for calculating the total number of motifs in a given graph. Kavosh takes in an edge list of the graph and ouputs a txt file with the number of each motif found. We used cPickle to store the raw data as a python dictionary. Since the runtime of this code increases exponentially with motif size, I created a cache directory that stores the motif results in the json format.
 
 MotifData:
-	This class contains the motif data for a set of graphs. It is the returned value for the findMotifs() function. It is basically a wrapper for a list of dictionaries. Each element in the list is represents 1 patient and the dictionary maps motif ID to the number of that motif found in the
-graph. It contains various access functions to iterate through or retrieve various motif data.
+	This class contains the motif data for a set of graphs. It is the returned value for the findMotifs() function. It is basically a wrapper for a list of dictionaries. Each element in the list is represents 1 patient and the dictionary maps motif ID to the number of that motif found in the graph. It contains various access functions to iterate through or retrieve various motif data.
 
 makeSwapData(degree=10):
 	This crates a pkl file that contains the graphs of the original data after undergoing edge swapping

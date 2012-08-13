@@ -1,12 +1,14 @@
 Python wrapper for Kavosh motif finding algorithm
 
-There's very little documentation for this so the following is just what I've discovered from the code and the example files
+There's very little documentation for this so the following is just what I've discovered from the code and the example files. I've modified the code so that the input is much simpler. To run, simply run ./Kavosh sizeOfMotif. It will use the edgelist titled result/OUTPUT.txt. Our python code creates this edgelist in the findMotif() function
 
 ------ Compile -------
 just run "make" in this directory. An executable called "Kavosh" is created
 
 
 ------- Kavosh Format ---------
+These are commented out in the c++ code because they're unnecessary for our purposes
+
 There are a few flags to put after "./Kavosh" in order to run it correctly
 
 -h Display help
@@ -38,13 +40,12 @@ findMotifs in GraphParse.py takes a networkx graph G and a motifSize and parses 
 
 -------- OUTPUT --------
 
-2 files are outputted
+1 filee are outputted
 
-adjMatrix.txt:
-	Adjacency matrices for all the found motifs along with their ID number
+MotifCount.txt
+	The first line is the total number of subgraphs explored. What follows is a list of motif IDs and total number of that motif. The findMotif function reads this in to python so you never need to see it. Just make sure you have a "result" directory becasue that is the temparary file directory for findMotif().
+	
 
-ZScore.txt:
-	Statistics on the found motifs labeled by ID number
 
 
 
