@@ -21,6 +21,8 @@ from scipy.sparse import dok_matrix
 from itertools import izip
 from itertools import repeat
 
+GRAPHSIZE = 88
+
 class MotifData:
 	"Class containing motif data for a set of graphs"
 
@@ -114,7 +116,7 @@ def findMotifs(data,key,motifSize=3,degree=10,randGraphs=None, useCache=True):
 		"""Generate random adjacency matricies"""
 		graphs = []
 		for i in xrange(100):
-			x = np.random.rand(88,88)
+			x = np.random.rand(GRAPHSIZE,GRAPHSIZE)
 			x -= np.diag(np.diag(x))
 			graphs.append(x)
 	else:
