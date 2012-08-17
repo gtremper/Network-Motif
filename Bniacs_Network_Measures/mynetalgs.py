@@ -68,10 +68,10 @@ def myallmeasures(G,directed=True ,test = 0):
     snames += ['globalclustering']
 
     svals += linkrank(G)
-    snames += ['linkrank']
+    snames += ['linkrank','LR groups']
 
     svals += modularity(G)
-    snames += ['modularity']
+    snames += ['modularity','M groups']
     
     return (snames,svals)             
         

@@ -5,7 +5,7 @@ BNIACS UPDATED FOLDER:
 These are explanations for what each .py file.
 
 
-parseNewData.py - This parses a ms.pkl, which is multiple sclerosis data.
+___parseNewData.py___ - This parses a ms.pkl, which is multiple sclerosis data.
     
     The ms.pkl's data structure is a dictionary.
     Key: a two-element tuple. 
@@ -40,9 +40,9 @@ parseNewData.py - This parses a ms.pkl, which is multiple sclerosis data.
     main1() computes all the raw measures. (NOTE: Creates a bunch of .pkl files in same directory)
     main2() computes all the t-test and creates T-test charts in the same directory.
 
-parseHelper.py - helper functions for parseNewData.py    
+___parseHelper.py___ - helper functions for parseNewData.py    
     
-nalz_test.py - This makes the t-test charts work. This .py file is used by parseNewData.
+___nalz_test.py___ - This makes the t-test charts work. This .py file is used by parseNewData.
 
     If you want to use this just to make t-test charts, use the: mycompare function.
     
@@ -72,33 +72,65 @@ nalz_test.py - This makes the t-test charts work. This .py file is used by parse
                 [stats for 'PP',stats for 'CIS',stats for 'RR',stats for 'SP']
                 Then the second arg must be:
                 ['PP','CIS','RR','SP']
-        
-        
+                
         Third arg: File for randomized data (randomly generated matrices with stats computed).
             This argument is the same format as an element in d (line 52 of this README).
         
         (look in ms_stats\uprand_D10.pkl and ms_stats\uprand_D10.pkl)
         
-        
-        
         Fourth arg: The name that you want to name the t-test .png file. 
         
         NOTE: this will save in the same directory, so if you have a file with same name, WILL OVERWRITE AND REPLACE.
+
+  GetData(file)
+	Takes the name of a pickled dictionary and creats two globally accessible variables: 
+	data: the dictionary
+	keys: a list of the keys of the dictionary
+
+   RunNetAlgs(dumpData) - computes the graph measures from mynetalgs on the graphs in the appropriate dictionary
+	
+	To run: First call 'GetData(file)' with the appropriate filename. (Example: aznorbert_corrsd_new.pkl)
+	-The file must be a pickled data structure in the form:
+	{ "patient ID":   ( {("measure name","corr type"): measure value},  {"matrix type": matrix}, "Patient Type") }
+
+	As in, a dictionary by patient ID, who's values are 3-tuples. First element of which being an originaly empty dictionary,
+	second is a dictionary filled with the graphs, both with and with a threshold. And third is the Patient type.
+	-"measure names" can be anything as long as they're consistent for each patient
+	-"corr type" must be either 'corr', 'lcorr', or 'lacorr'. All 3 for each patient and measure name
+	-"matrix type" will inlcude 'corr', 'lcorr', 'lacorr', 'tcorr', 'tlcorr', and 'tlacorr'. The ones starting
+	with t mean all edges under a threshold have been removed such that the graph has average
+	degree 10 
+	-"Patient Type" with be either 'AD', 'MCI', 'NL', or 'CONVERT'
+
+	Argument dumpData specifies whether to dump the described data structure with
+	all the computed values. Along with a converted version of the raw data format described
+	by the README in Alz_stats. Dumps by defaults
+
+   DegreeNetAlgs(undirected,startdeg,enddeg) 
+	Does the same thing as RunNetAlgs but for a range of degree thresholds, starting from
+	startdeg (inclusive) to enddeg (inclusive). Defaults to directed graphs of degree 10 only
+	Dumps data automatically
+	Must run GetData first as with RunNetAlgs. 
+   
+   RandomDegrees(undirected,startdeg,enddeg)
+	Works like DegreeNetAlgs but you don't need to run 'GetData', automatically
+	generates 100 random graphs and computes the graph measures on them.
+	Dumps data automatically. Defaults to directed graphs of degree 10
         
-mynetalgs.py - This file computes MEASURES.
+___mynetalgs.py___ - This file computes MEASURES.
     
     myallmeasures - computes measures of a simple directed (or undirected) graph.
         input: directed or undirected graph.
         
-        output: a tuple. 
+        output: a 2-tuple. 
             First element: ['stronglyConnected','avgoutdeg',...]
             Second element: [.83,1.0,0.0,...]
             
             Both lists are equal in length.
         
-greedy.py - Helper functions for mynetalgs' calculation of modularity and linkrank.
+___greedy.py___ - Helper functions for mynetalgs' calculation of modularity and linkrank.
 
-sepGroups.py - seperates a PATIENT ID dictionary into the 4 groups NL,AD,MCI, and CONVERTED.
+___sepGroups.py___ - seperates a PATIENT ID dictionary into the 4 groups NL,AD,MCI, and CONVERTED.
 
     Structure of Patient ID dictionary:
             Key: PATIENT ID (string)
@@ -126,7 +158,7 @@ sepGroups.py - seperates a PATIENT ID dictionary into the 4 groups NL,AD,MCI, an
     Will save as .pkl files in same directory named adCorr,mciCorr,nlCorr,convCorr.
         ^ are basically a list of matrices.
         
-corrData.py - fills in the measures for a PATIENT ID dictionary with an empty dictionary of measures.
+___corrData.py___ - fills in the measures for a PATIENT ID dictionary with an empty dictionary of measures.
 
     main() is the function that does this.
     
@@ -137,11 +169,11 @@ corrData.py - fills in the measures for a PATIENT ID dictionary with an empty di
     For example:
     main("aznorbert_corrsd_undirected.pkl","aznorbert_corrsd_new_measures_undirected.pkl")
     
-DataTest.py - tests whether two the corrData.py worked. Compares two PATIENT ID dictionaries.
+___DataTest.py___ - tests whether two the corrData.py worked. Compares two PATIENT ID dictionaries.
     
     -replace line 10 and 14 with appropiate file names.
     
-graph_helper.py - function for graph-swapping. Not used anywhere else.
+___graph_helper.py___ - function for graph-swapping. Not used anywhere else.
     
 
     

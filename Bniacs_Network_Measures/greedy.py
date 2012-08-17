@@ -47,7 +47,7 @@ def greedyMax(J,c,Q):
                 B2[i][j] = sum(temp)
         c = clean
         B = B2
-    return [Q]
+    return [Q,len(clean)]
 
 def linkrank(G):
     c = arange(len(G.nodes()))

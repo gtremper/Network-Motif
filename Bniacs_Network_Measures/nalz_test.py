@@ -35,7 +35,7 @@ def importance(input):
     return 0
 
 """helper function for compare that returns the appropriate color
-for the appropriate significant level"""
+for the appropriate significance level"""
 def numColor(input):
     if input < 0.0:
         return (1,1,1)
@@ -54,8 +54,11 @@ def numformat(num):
     if num < 1.0/1000:
         return str(("%.02e"%num))
     return str(("%.04f"%num))
-    
-def RunNetAlgs():
+
+#Runs the measures for mynetalgs on the data
+#The data should be in the dictionary format
+#described in the README
+def RunNetAlgs(dumpData = True):
     for key, value in data.iteritems():
         print key
         mats = value[1]
@@ -67,7 +70,81 @@ def RunNetAlgs():
             value[0][(measure,'corr')] = corr[1][i]
             value[0][(measure,'lcorr')] = lcorr[1][i]
             value[0][(measure,'lacorr')] = lacorr[1][i]
+    if dumpData
+        dump(data,open('computed_data','wb'))
+        dump(convert('AD'),open('final_AD.pkl','wb'))
+        dump(convert('NL'),open('final_NL.pkl','wb'))
+        dump(convert('MCI'),open('final_MCI.pkl','wb'))
+        dump(convert('CONVERT'),open('final_CONVERT.pkl','wb'))
 
+#Does the same as RunNetAlgs but can work on a range of degree
+#thresholding for the graphs. Also will work do undirected
+#Also dumps all the data but only in format specified for mycompare
+def DegreeNetAlgs(undirected = False,startdeg = 10,enddeg = 10):
+    for i in range(startdeg,enddeg+1):
+        print i
+        count = 0
+        for key, value in data.iteritems():
+            count += 1
+            print count, i
+            mats = value[1]
+
+            corr = mats['corr']
+            lcorr = mats['lcorr']
+            lacorr = mats['lacorr']
+
+            if undirected
+                corr += transpose(corr)
+                lcorr += transpose(lcorr)
+                lacorr += transpose(lacorr)
+            
+            corr = corr > findThresh(corr,i)
+            lcorr = lcorr > findThresh(lcorr,i)
+            lacorr = lacorr > findThresh(lacorr,i)
+            
+            corr = myallmeasures(nx.DiGraph(corr))
+            lcorr = myallmeasures(nx.DiGraph(lcorr))
+            lacorr = myallmeasures(nx.DiGraph(lacorr))
+            for k in range(len(corr[0])):
+                measure = corr[0][k]
+                value[0][(measure,'corr')] = corr[1][k]
+                value[0][(measure,'lcorr')] = lcorr[1][k]
+                value[0][(measure,'lacorr')] = lacorr[1][k]
+        dump(convert('AD',i),open('totalD_AD_D'+str(i)+'.pkl','wb'))
+        dump(convert('NL',i),open('totalD_NL_D'+str(i)+'.pkl','wb'))
+        dump(convert('MCI',i),open('totalD_MCI_D'+str(i)+'.pkl','wb'))
+        dump(convert('CONVERT',i),open('totalD_CONVERT_D'+str(i)+'.pkl','wb'))
+
+#Runs the measures on 100 random networks (specified direction by 'undirected')
+#And dumps the data in the format needed for mycompare
+def RandomDegrees(undirected = False,startdeg = 10, enddeg = 10):
+    for des in range(startdeg,enddeg + 1):
+        print des
+        count = 0
+        anslist = []
+        orderedans = []
+        for nn in range(100):
+            x = random.rand(88,88)
+            x -= diag(diag(x))
+            if undirected:
+                x = triu(x,1)
+                x += x.T
+            x = x > findThresh(x, des)
+            patientGraph = nx.DiGraph(x)
+            m = myallmeasures(patientGraph)
+            anslist.append(m[1])
+            if nn % 10 == 0:
+                print nn, des
+        mnames = m[0]; 
+        for j in range(len(mnames)):
+            measure = [i[j] for i in anslist]
+            measure = [i for i in measure if i != None]
+            orderedans.append(measure)    
+        corr = zip(mnames,orderedans)
+        g = lambda n: n[0]
+        corr.sort(key = g)
+        dump([mnames,orderedans], open("ufinal_rand_D"+str(des)+".pkl","wb"))
+        
 #picks out just the measure value dictionary in the data
 def extractData():
     alldata = []
@@ -80,37 +157,53 @@ def extractData():
 #graph types for a patient type 'name': [corr,lcorr,lacorr]
 #Also sorts by measure name, thus if all measures exist, the measures
 #should be in the same order.
-def convert(group,name):
-    group = group.values()
+#Note: must have run 'GetData' at some point before running this
+def convert(name, deg = 10):
+    group = data.values()
     group = [i[0] for i in group if i[2] == name]
     corr = [[],[]]
     lcorr = [[],[]]
     lacorr = [[],[]]
     for elem in group:
+        passcorr = 1
+        passlcorr = 1
+        passlacorr = 1
+        #if one wants to exclude all graphs that couldn't
+        #attain the avgdeg, "deg", uncomment the below code
+##        if elem[('avgindeg','corr')] < deg:
+##            passcorr = 0
+##            print elem[('avgindeg','corr')]
+##        if elem[('avgindeg','lcorr')] < deg:
+##            passlcorr = 0
+##            print elem[('avgindeg','lcorr')]
+##        if elem[('avgindeg','lacorr')] < deg:
+##            passlacorr = 0
+##            print elem[('avgindeg','lacorr')]
         for key, val in elem.iteritems():
             if val == None:
                 continue
-            if key[1] == 'corr':
+            if passcorr and key[1] == 'corr':
                 if key[0] in corr[0]:
                     corr[1][corr[0].index(key[0])].append(val)
                 else:
                     corr[0].append(key[0])
                     corr[1].append([val])
 
-            if key[1] == 'lcorr':
+            if passlcorr and key[1] == 'lcorr':
                 if key[0] in lcorr[0]:
                     lcorr[1][lcorr[0].index(key[0])].append(val)
                 else:
                     lcorr[0].append(key[0])
                     lcorr[1].append([val])
 
-            if key[1] == 'lacorr':
+            if passlacorr and key[1] == 'lacorr':
                 if key[0] in lacorr[0]:
                     lacorr[1][lacorr[0].index(key[0])].append(val)
                 else:
                     lacorr[0].append(key[0])
                     lacorr[1].append([val])
-
+    print corr[0][0]
+    print len(corr[1][0])
     corr = zip(corr[0],corr[1])
     lcorr = zip(lcorr[0],lcorr[1])
     lacorr = zip(lacorr[0],lacorr[1])
