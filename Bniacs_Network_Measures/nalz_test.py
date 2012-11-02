@@ -70,7 +70,7 @@ def RunNetAlgs(dumpData = True):
             value[0][(measure,'corr')] = corr[1][i]
             value[0][(measure,'lcorr')] = lcorr[1][i]
             value[0][(measure,'lacorr')] = lacorr[1][i]
-    if dumpData
+    if dumpData:
         dump(data,open('computed_data','wb'))
         dump(convert('AD'),open('final_AD.pkl','wb'))
         dump(convert('NL'),open('final_NL.pkl','wb'))
@@ -93,7 +93,7 @@ def DegreeNetAlgs(undirected = False,startdeg = 10,enddeg = 10):
             lcorr = mats['lcorr']
             lacorr = mats['lacorr']
 
-            if undirected
+            if undirected:
                 corr += transpose(corr)
                 lcorr += transpose(lcorr)
                 lacorr += transpose(lacorr)

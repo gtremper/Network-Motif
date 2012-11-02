@@ -26,7 +26,7 @@ def parse_new(name, pdd={}):
 		raw = row[indexdict['freesurfer-id']].split('_')
 
 		name = raw[0]
-		if name in pdd.keys() and pdd[name] is None:
+		if name in pdd.keys() and pdd[namef] is None:
 			continue
 		time = int(raw[2])
 		patienttype = row[indexdict['disease-subtype']]
