@@ -8,7 +8,7 @@ Created by BNIAC on 2012-08-02.
 
 import sys
 import os
-import random
+import random as rd
 import math
 import heapq
 import json
@@ -69,6 +69,30 @@ class MotifData:
 
 	def getSubgraphs(self, pat):
 		return self.subgraphs[pat]
+
+
+#do a permutation "t-test" of significance of the two means
+def permttest(d1,d2,kmax=5000):	 #d is vector with 2 groups of data, maxk = max shuffles
+	sign = d1.mean() - d2.mean()
+	d1 = list(d1)
+	d2 = list(d2)
+	nd1,nd2 = d1,d2
+	n1,n2 = len(d1),len(d2)
+	n = n1+n2
+	dtot = d1+d2
+	mvreal = 1.0*sum(d1)/n1-1.0*sum(d2)/n2
+	mvs = []
+	#shuffle and compute
+	for k in range(kmax):
+		rd.shuffle(dtot)
+		nd1 = dtot[0:n1]
+		nd2 = dtot[n1:n]
+		mvs += [1.0*sum(nd1)/n1-1.0*sum(nd2)/n2]
+	mvs = sorted(mvs)
+	for i in range(kmax):
+		if mvreal < mvs[i]:
+			return (sign , (min(1.0*(kmax-i)/kmax,1.0*i/kmax)))
+	return (sign,(1.0/kmax))
 
 def makeSwapData(degree=10):
 	"""generates edgeswapped graph pickle file"""
@@ -308,16 +332,17 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 				mci = motifsMCI[key]
 				ad = motifsAD[key]
 				conv = motifsCONVERT[key]
-				c1 = stats.ttest_ind(norm, mci)
-				c2 = stats.ttest_ind(norm, ad)
-				c3 = stats.ttest_ind(norm, conv)
-				c4 = stats.ttest_ind(mci, ad)
-				c5 = stats.ttest_ind(mci, conv)
-				c6 = stats.ttest_ind(ad, conv)
-				c7 = stats.ttest_ind(norm, motifsNLRAND[key])
-				c8 = stats.ttest_ind(mci, motifsMCIRAND[key])
-				c9 = stats.ttest_ind(ad, motifsADRAND[key])
-				c10 = stats.ttest_ind(conv, motifsCONVERTRAND[key])
+				c1 = permttest(norm, mci)
+				print "c1", c1
+				c2 = permttest(norm, ad)
+				c3 = permttest(norm, conv)
+				c4 = permttest(mci, ad)
+				c5 = permttest(mci, conv)
+				c6 = permttest(ad, conv)
+				c7 = permttest(norm, motifsNLRAND[key])
+				c8 = permttest(mci, motifsMCIRAND[key])
+				c9 = permttest(ad, motifsADRAND[key])
+				c10 = permttest(conv, motifsCONVERTRAND[key])
 				motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
 
 			f.write(
@@ -331,7 +356,9 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 			"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
 			)
 			for stat in motifStats:
+				print "stat", stat
 				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
+				print "stat1", stat[1]
 				for sign,col in stat[1:]:
 					cell = " & {0:.3}".format(col)
 					if sign > 0:
@@ -385,81 +412,81 @@ def createfakeGroups(data, motifSize):
 			n = int(float(myList[i])/float(total) * nllen)
 			for j in xrange(n):
 				if i == 0:
-					g = nlData.pop(random.randrange(len(nlData)))
+					g = nlData.pop(rd.randrange(len(nlData)))
 					newdata[('NL', corr)].append(g)
 				if i == 1:
-					g = adData.pop(random.randrange(len(adData)))
+					g = adData.pop(rd.randrange(len(adData)))
 					newdata[('NL', corr)].append(g)
 				if i == 2:
-					g = mciData.pop(random.randrange(len(mciData)))
+					g = mciData.pop(rd.randrange(len(mciData)))
 					newdata[('NL', corr)].append(g)
 				if i == 3:
-					g = convertData.pop(random.randrange(len(convertData)))
+					g = convertData.pop(rd.randrange(len(convertData)))
 					newdata[('NL', corr)].append(g)
 
 		for i in xrange(4):
 			n = int(float(myList[i])/float(total) * adlen)
 			for j in xrange(n):
 				if i == 0:
-					g = nlData.pop(random.randrange(len(nlData)))
+					g = nlData.pop(rd.randrange(len(nlData)))
 					newdata[('AD', corr)].append(g)
 				if i == 1:
-					g = adData.pop(random.randrange(len(adData)))
+					g = adData.pop(rd.randrange(len(adData)))
 					newdata[('AD', corr)].append(g)
 				if i == 2:
-					g = mciData.pop(random.randrange(len(mciData)))
+					g = mciData.pop(rd.randrange(len(mciData)))
 					newdata[('AD', corr)].append(g)
 				if i == 3:
-					g = convertData.pop(random.randrange(len(convertData)))
+					g = convertData.pop(rd.randrange(len(convertData)))
 					newdata[('AD', corr)].append(g)
 
 		for i in xrange(4):
 			n = int(float(myList[i])/float(total) * mcilen)
 			for j in xrange(n):
 				if i == 0:
-					g = nlData.pop(random.randrange(len(nlData)))
+					g = nlData.pop(rd.randrange(len(nlData)))
 					newdata[('MCI', corr)].append(g)
 				if i == 1:
-					g = adData.pop(random.randrange(len(adData)))
+					g = adData.pop(rd.randrange(len(adData)))
 					newdata[('MCI', corr)].append(g)
 				if i == 2:
-					g = mciData.pop(random.randrange(len(mciData)))
+					g = mciData.pop(rd.randrange(len(mciData)))
 					newdata[('MCI', corr)].append(g)
 				if i == 3:
-					g = convertData.pop(random.randrange(len(convertData)))
+					g = convertData.pop(rd.randrange(len(convertData)))
 					newdata[('MCI', corr)].append(g)
 
 		for i in xrange(4):
 			n = int(float(myList[i])/float(total) * convertlen)
 			for j in xrange(n):
 				if i == 0:
-					g = nlData.pop(random.randrange(len(nlData)))
+					g = nlData.pop(rd.randrange(len(nlData)))
 					newdata[('CONVERT', corr)].append(g)
 				if i == 1:
-					g = adData.pop(random.randrange(len(adData)))
+					g = adData.pop(rd.randrange(len(adData)))
 					newdata[('CONVERT', corr)].append(g)
 				if i == 2:
-					g = mciData.pop(random.randrange(len(mciData)))
+					g = mciData.pop(rd.randrange(len(mciData)))
 					newdata[('CONVERT', corr)].append(g)
 				if i == 3:
-					g = convertData.pop(random.randrange(len(convertData)))
+					g = convertData.pop(rd.randrange(len(convertData)))
 					newdata[('CONVERT', corr)].append(g)
 
 		leftovers = nlData + adData + mciData + convertData
 		while len(newdata['NL', corr]) < nllen:
-			g = leftovers.pop(random.randrange(len(leftovers)))
+			g = leftovers.pop(rd.randrange(len(leftovers)))
 			newdata[('NL', corr)].append(g)
 
 		while len(newdata['AD', corr]) < adlen:
-			g = leftovers.pop(random.randrange(len(leftovers)))
+			g = leftovers.pop(rd.randrange(len(leftovers)))
 			newdata[('AD', corr)].append(g)
 
 		while len(newdata['MCI', corr]) < mcilen:
-			g = leftovers.pop(random.randrange(len(leftovers)))
+			g = leftovers.pop(rd.randrange(len(leftovers)))
 			newdata[('MCI', corr)].append(g)
 
 		while len(newdata['CONVERT', corr]) < convertlen:
-			g = leftovers.pop(random.randrange(len(leftovers)))
+			g = leftovers.pop(rd.randrange(len(leftovers)))
 			newdata[('CONVERT', corr)].append(g)
 
 	return newdata
@@ -693,9 +720,9 @@ def randomize_graph(G, numpasses):
 		while not success:
 			edges = G.edges()
 			edgeSet = set(edges)
-			edge1 = random.choice(edges)
+			edge1 = rd.choice(edges)
 			a,b = edge1
-			random.shuffle(edges)
+			rd.shuffle(edges)
 			for edge2 in edges:
 				c,d = edge2
 				if (a, d) not in edgeSet and (c, b) not in edgeSet:
@@ -715,9 +742,9 @@ def randomize_graph_count(G, numpasses):
 		while not success:
 			edges = G.edges()
 			edgeSet = set(edges)
-			edge1 = random.choice(edges)
+			edge1 = rd.choice(edges)
 			a,b = edge1
-			random.shuffle(edges)
+			rd.shuffle(edges)
 			for edge2 in edges:
 				c,d = edge2
 				if (a, d) not in edgeSet and (c, b) not in edgeSet:
@@ -766,7 +793,8 @@ def findfatness(x):
 def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
-	findMotifs(data,('AD', 'corr'),motifSize=3,degree=10,randGraphs=None, useCache=True)
+	#findMotifs(data,('AD', 'corr'),motifSize=3,degree=10,randGraphs=None, useCache=True)
+	PDFstats(data,"NewTTest")
 
 
 if __name__ == '__main__':
