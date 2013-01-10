@@ -329,7 +329,7 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 				randGraphs = pickle.load(pic)
 
 		statistics = {}		
-		for corr in ('corr','lcorr','lacorr'):
+		for corr in ('corr','lcorr'):
 			print "Starting " + corr +"..."
 			motifsNL = findMotifs(data, ('NL',corr), motifSize = motifSize, degree=degree)
 			motifsMCI = findMotifs(data, ('MCI',corr), motifSize = motifSize, degree=degree)
@@ -351,7 +351,7 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 							& motifsCONVERTRAND.keys )
 
 			allMotifs = motifsNL.topMotifs(30)
-
+			
 			motifStats = []
 			for key in allMotifs:
 				norm = motifsNL[key]
@@ -359,7 +359,6 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 				ad = motifsAD[key]
 				conv = motifsCONVERT[key]
 				c1 = permttest(norm, mci)
-				print "c1", c1
 				c2 = permttest(norm, ad)
 				c3 = permttest(norm, conv)
 				c4 = permttest(mci, ad)
@@ -382,9 +381,7 @@ def PDFstats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 			"Key & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
 			)
 			for stat in motifStats:
-				print "stat", stat
 				f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
-				print "stat1", stat[1]
 				for sign,col in stat[1:]:
 					cell = " & {0:.3}".format(col)
 					if sign > 0:
@@ -584,16 +581,16 @@ def PDFstatsShuf(data, filename, motifSize=3, degree=10):
         mci = motifsMCI[key]
         ad = motifsAD[key]
         conv = motifsCONVERT[key]
-        c1 = stats.ttest_ind(norm, mci)
-        c2 = stats.ttest_ind(norm, ad)
-        c3 = stats.ttest_ind(norm, conv)
-        c4 = stats.ttest_ind(mci, ad)
-        c5 = stats.ttest_ind(mci, conv)
-        c6 = stats.ttest_ind(ad, conv)
-        c7 = stats.ttest_ind(norm, [d[key] if key in d else 0. for d in motifsNLRAND])
-        c8 = stats.ttest_ind(mci, [d[key] if key in d else 0. for d in motifsMCIRAND])
-        c9 = stats.ttest_ind(ad, [d[key] if key in d else 0. for d in motifsADRAND])
-        c10 = stats.ttest_ind(conv, [d[key] if key in d else 0. for d in motifsCONVERTRAND])
+        c1 = permttest(norm, mci)
+        c2 = permttest(norm, ad)
+        c3 = permttest(norm, conv)
+        c4 = permttest(mci, ad)
+        c5 = permttest(mci, conv)
+        c6 = permttest(ad, conv)
+        c7 = permttest(norm, np.array([d[key] if key in d else 0. for d in motifsNLRAND]))
+        c8 = permttest(mci, np.array([d[key] if key in d else 0. for d in motifsMCIRAND]))
+        c9 = permttest(ad, np.array([d[key] if key in d else 0. for d in motifsADRAND]))
+        c10 = permttest(conv, np.array([d[key] if key in d else 0. for d in motifsCONVERTRAND]))
         motifStats.append((key,c1,c2,c3,c4,c5,c6,c7,c8,c9,c10))
 
       motifStats.sort(key=lambda x: motifsNL[x[0]].mean(),reverse=True)
@@ -687,16 +684,16 @@ def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
 
       motifStats = []
       for pos,key in enumerate(('Entrophy', 'Gini Coeff', 'Fatness')):
-        c1 = stats.ttest_ind(NLd[pos], MCId[pos])
-        c2 = stats.ttest_ind(NLd[pos], ADd[pos])
-        c3 = stats.ttest_ind(NLd[pos], CONVERTd[pos])
-        c4 = stats.ttest_ind(MCId[pos], ADd[pos])
-        c5 = stats.ttest_ind(MCId[pos], CONVERTd[pos])
-        c6 = stats.ttest_ind(ADd[pos], CONVERTd[pos])
-        c7 = stats.ttest_ind(NLd[pos], NLRANDd[pos])
-        c8 = stats.ttest_ind(MCId[pos], MCIRANDd[pos])
-        c9 = stats.ttest_ind(ADd[pos], ADRANDd[pos])
-        c10 = stats.ttest_ind(CONVERTd[pos], CONVERTRANDd[pos])
+        c1 = permttest(NLd[pos], MCId[pos])
+        c2 = permttest(NLd[pos], ADd[pos])
+        c3 = permttest(NLd[pos], CONVERTd[pos])
+        c4 = permttest(MCId[pos], ADd[pos])
+        c5 = permttest(MCId[pos], CONVERTd[pos])
+        c6 = permttest(ADd[pos], CONVERTd[pos])
+        c7 = permttest(NLd[pos], NLRANDd[pos])
+        c8 = permttest(MCId[pos], MCIRANDd[pos])
+        c9 = permttest(ADd[pos], ADRANDd[pos])
+        c10 = permttest(CONVERTd[pos], CONVERTRANDd[pos])
         motifStats.append((key,c1,c2,c3,c4,c5,c6))#,c7,c8,c9,c10))
 
       f.write(
@@ -704,10 +701,12 @@ def PDFdiststats(data, filename, edgeSwap=False, motifSize=3, degree=10):
       "\\begin{adjustwidth}{-2in}{-2in} "
       "\\caption{Motif Distribution T-test results from "+corr+" data with using edge swap}\n"
       "\\centering\n"
-      "\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
+      #"\\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}\n"
+      "\\begin{tabular}{|c|c|c|c|c|c|c|}\n"
       "\\hline\n"
       "\\rowcolor[gray]{0.85}\n"
-      "Measure & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
+      #"Measure & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv & NL to Rand & MCI to Rand & AD to Rand & Conv to Rand \\\\ \\hline\n"
+      "Measure & NL to MCI & NL to AD & NL to Conv & MCI to AD & MCI to Conv & AD to Conv \\\\ \\hline\n"
       )
       for stat in motifStats:
         f.write( str(stat[0]) + " \\cellcolor[gray]{0.95}")
@@ -820,8 +819,8 @@ def findfatness(x):
 def main():
 	with open("aznorbert_corrsd_new.pkl","rb") as f:
 		data = pickle.load(f)
-	#findMotifs(data,('AD', 'corr'),motifSize=3,degree=10,randGraphs=None, useCache=True)
-	PDFstats(data,"NewTTest")
+	PDFstats(data, "Size4Stats", motifSize=3)
+	
 
 
 if __name__ == '__main__':
